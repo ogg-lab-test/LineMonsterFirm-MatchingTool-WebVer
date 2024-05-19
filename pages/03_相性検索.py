@@ -658,7 +658,7 @@ def entry_set_th_from_cmb2(datalist, lis_names):
     is_raremon_pg1 = False
     is_raremon_pg2 = False
     num_rare = 0  # レアモンスター用の変数（血統ID）
-    lis_affs = [0] * 8
+    lis_affs = [0, 0, 34, 32, 75, 75, 75, 75]  # 内部で仮設定している注意。
 
     # 設定値のカウント
     for i, name in enumerate(lis_names):
@@ -673,14 +673,13 @@ def entry_set_th_from_cmb2(datalist, lis_names):
                 else:
                     is_raremon_pg2 = True
 
-    # ★★仮の設定
-    lis_affs[0] = 0
-    lis_affs[1] = 0
-    lis_affs[2] = 34
-    lis_affs[3] = 32
-
     # 設定値に応じて、相性閾値を算出            
     if total != 0:
+
+        lis_affs[0] = 70
+        lis_affs[1] = 70
+        lis_affs[2] = 70
+        lis_affs[3] = 70
 
         if is_raremon_c:
 
@@ -839,7 +838,7 @@ def button_calc_affinity(datalist, lis_choice_table, lis_names, lis_affs):
         
         # テーブルの整形
         del datalist.df_affinities["index"]
-        st.dataframe(datalist.df_affinities, width=1000, height=1000)
+        st.dataframe(datalist.df_affinities, width=2000, height=500)
 
     else:
         # 何もしないで次へ
