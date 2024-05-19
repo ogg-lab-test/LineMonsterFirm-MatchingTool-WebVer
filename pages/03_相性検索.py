@@ -159,19 +159,19 @@ def set_input_filename():
     dic_file_names = {}
 
     # ファイル名の変数格納
-    fname_monsters   = r"./datamonsters.csv"
-    fname_affinities_main = r"./data/affinities_main.csv"
-    fname_affinities_sub = r"./data/affinities_sub.csv"
+    fname_monsters   = "data/monsters.csv"
+    fname_affinities_main = "data/affinities_main.csv"
+    fname_affinities_sub = "data/affinities_sub.csv"
 
     # 存在チェック
-    if not os.path.isfile(os.getcwd() + "\\" + fname_monsters):
-        print(os.getcwd() + "\\" + fname_monsters + "が存在しません。適切な場所にファイルを格納して再起動してください。")
+    if not os.path.isfile(os.getcwd() + "/" + fname_monsters):
+        print(os.getcwd() + "/" + fname_monsters + "が存在しません。適切な場所にファイルを格納して再起動してください。")
         return ret
-    if not os.path.isfile(os.getcwd() + "\\" + fname_affinities_main):
-        print(os.getcwd() + "\\" + fname_affinities_main + "が存在しません。適切な場所にファイルを格納して再起動してください")
+    if not os.path.isfile(os.getcwd() + "/" + fname_affinities_main):
+        print(os.getcwd() + "/" + fname_affinities_main + "が存在しません。適切な場所にファイルを格納して再起動してください")
         return ret
-    if not os.path.isfile(os.getcwd() + "\\" + fname_affinities_sub):
-        print(os.getcwd() + "\\" + fname_affinities_sub + "が存在しません。適切な場所にファイルを格納して再起動してください")
+    if not os.path.isfile(os.getcwd() + "/" + fname_affinities_sub):
+        print(os.getcwd() + "/" + fname_affinities_sub + "が存在しません。適切な場所にファイルを格納して再起動してください")
         return ret
     
     # 返却値格納
