@@ -676,10 +676,10 @@ def entry_set_th_from_cmb2(datalist, lis_names):
     # 設定値に応じて、相性閾値を算出            
     if total != 0:
 
-        lis_affs[0] = 70
-        lis_affs[1] = 70
-        lis_affs[2] = 70
-        lis_affs[3] = 70
+        lis_affs[4] = 70
+        lis_affs[5] = 70
+        lis_affs[6] = 70
+        lis_affs[7] = 70
 
         if is_raremon_c:
 
@@ -842,12 +842,13 @@ def button_calc_affinity(datalist, lis_choice_table, lis_names, lis_affs):
 
     else:
         # 何もしないで次へ
+        st.write("検索結果:0")
         pass
 
 
     ### 後処理
 
-    return
+    return ret
 
 
 
@@ -1433,7 +1434,8 @@ lis_names[6] = st.selectbox('祖母②', datalist.lis_mons_names, index = 0, pla
 
 # 検索
 if st.button('検索開始！'):
-    # 閾値取得(暫定)
-    lis_affs = entry_set_th_from_cmb2(datalist, lis_names)
-    button_calc_affinity(datalist, lis_choice_table, lis_names, lis_affs)
+    with st.spinner('processiong...'):
+        # 閾値取得(暫定)
+        lis_affs = entry_set_th_from_cmb2(datalist, lis_names)
+        ret = button_calc_affinity(datalist, lis_choice_table, lis_names, lis_affs)
 
