@@ -658,7 +658,7 @@ def entry_set_th_from_cmb2(datalist, lis_names):
     is_raremon_pg1 = False
     is_raremon_pg2 = False
     num_rare = 0  # レアモンスター用の変数（血統ID）
-    lis_affs = [0, 0, 34, 32, 75, 75, 75, 75]
+    lis_affs = [0, 0, 34, 32, 75, 75, 75, 75]  # 内部で仮設定している注意。
 
     # 設定値のカウント
     for i, name in enumerate(lis_names):
