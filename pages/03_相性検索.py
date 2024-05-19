@@ -159,9 +159,9 @@ def set_input_filename():
     dic_file_names = {}
 
     # ファイル名の変数格納
-    fname_monsters   = r"data/monsters.csv"
-    fname_affinities_main = r"data/affinities_main.csv"
-    fname_affinities_sub = r"data/affinities_sub.csv"
+    fname_monsters   = r"./datamonsters.csv"
+    fname_affinities_main = r"./data/affinities_main.csv"
+    fname_affinities_sub = r"./data/affinities_sub.csv"
 
     # 存在チェック
     if not os.path.isfile(os.getcwd() + "\\" + fname_monsters):
