@@ -1,0 +1,52 @@
+"""
+   Copyright 2024/5/18 sean of copyright owner
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+	端的に言えば、改変/二次配布は自由ですが、一切責任は負いません！
+	配布時は、必ず"sean"の名前と上記文章をコピーして渡すように！って感じです！
+	(改変時は面倒ではありますが変更履歴/内容も記載してください。)
+
+"""
+import streamlit as st
+
+import pandas as pd
+
+import datetime
+import os
+import time
+
+
+
+# st.title("ヘルプ -作成中-")
+
+st.title("LINE：モンスターファーム モンスター相性計算アプリ")
+st.write("Version 3.0.0")
+
+"""
+#  参照データ設定
+## 所持モンスター設定
+## モンスター参照テーブル設定
+"""
+
+"""
+# 検索モンスター名設定
+"""
+
+"""
+#  検索オプション
+## 計算手法設定
+## 出力形式設定
+## 相性値閾値設定
+## 共通秘伝設定
+"""
