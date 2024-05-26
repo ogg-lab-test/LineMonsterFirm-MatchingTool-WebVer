@@ -25,6 +25,7 @@ import pandas as pd
 import datetime
 import os
 import time
+from enum import Enum
 
 
 
@@ -105,8 +106,13 @@ class ThreshAff():
 
 
 
+# データをまとめるクラス
 class DataList():
     def __init__(self):
+
+        # 設定値
+        self.num_monster = 7
+        self.num_kind = 3
 
         # 各入力データの格納場所
         self.df_monsters = pd.DataFrame()
@@ -129,10 +135,8 @@ class DataList():
         self.lis_mons_league_tb_c       = [[]]
         self.lis_mons_league_tb_pg      = [[]]
 
-
-        # 最終結果格納場所
-        self.df_affinities = pd.DataFrame()
-
+        # ラジオボタン選択結果(テーブル情報)保存用格納域
+        self.lis_choice_table = [0] * 2
 
         # コンボリスト用リスト/DF(create_combo_list参照)
         self.lis_main_ped = []
@@ -147,6 +151,33 @@ class DataList():
 
         self.df_monsters_c = pd.DataFrame()
         self.df_monsters_pg = pd.DataFrame()
+
+        # 検索用名前格納用リスト
+        self.lis_names = [ [ "" for j in range(self.num_monster) ] for i in range(self.num_kind)]
+
+        # 相性閾値の初期値設定用リスト(起動直後のみ、それ以降は使用しない。)
+        self.lis_threshs = [0, 0, 34, 32, 75, 75, 75, 75]
+
+
+
+# ラジオボタンの選択肢1
+class RadioChoiceTable1(Enum):
+  def __str__(cls):
+    return cls.name
+
+  min_m式 = 0
+  min_m十s式 = 1
+
+
+
+# ラジオボタンの選択肢2
+class RadioChoiceTable2(Enum):
+  def __str__(cls):
+    return cls.name
+
+  純血統十レア = 0
+  全モンスター = 1
+  全モンスター_純血統のみ除く = 2
 
 
 
@@ -165,14 +196,14 @@ def set_input_filename():
 
     # 存在チェック
     if not os.path.isfile(os.getcwd() + "/" + fname_monsters):
-        print(os.getcwd() + "/" + fname_monsters + "が存在しません。適切な場所にファイルを格納して再起動してください。")
-        return ret
+        st.error(os.getcwd() + "/" + fname_monsters + "が存在しません。適切な場所にファイルを格納して再起動してください。")
+        return ret, dic_file_names
     if not os.path.isfile(os.getcwd() + "/" + fname_affinities_main):
-        print(os.getcwd() + "/" + fname_affinities_main + "が存在しません。適切な場所にファイルを格納して再起動してください")
-        return ret
+        st.error(os.getcwd() + "/" + fname_affinities_main + "が存在しません。適切な場所にファイルを格納して再起動してください")
+        return ret, dic_file_names
     if not os.path.isfile(os.getcwd() + "/" + fname_affinities_sub):
-        print(os.getcwd() + "/" + fname_affinities_sub + "が存在しません。適切な場所にファイルを格納して再起動してください")
-        return ret
+        st.error(os.getcwd() + "/" + fname_affinities_sub + "が存在しません。適切な場所にファイルを格納して再起動してください")
+        return ret, dic_file_names
     
     # 返却値格納
     ret = True
@@ -245,22 +276,22 @@ def add_monster_id(datalist):
     
     # メイン血統のインデックス名/列名で順番が同じになっているかチェック
     if not is_same_list(name_list_m_row, name_list_m_col):
-        print("affinities_main.csvのインデックス名/列名の対応関係がとれていません。\n同じ順番にしてください。")
+        st.error("affinities_main.csvのインデックス名/列名の対応関係がとれていません。\n同じ順番にしてください。")
         return ret
 
     # サブ血統のインデックス名/列名で順番が同じになっているかチェック
     if not is_same_list(name_list_s_row, name_list_s_col):
-        print("affinities_sub.csvのインデックス名/列名の対応関係がとれていません。\n同じ順番にしてください。")
+        st.error("affinities_sub.csvのインデックス名/列名の対応関係がとれていません。\n同じ順番にしてください。")
         return ret
 
     # メイン血統のインデックス名/サブ血統のインデックス名で順番が同じになっているかチェック
     if not is_same_list(name_list_m_row, name_list_s_row):
-        print("affinities_main.csvとaffinities_main.csvで対応関係がとれていません。\n同じ形式の表にしてください。")
+        st.error("affinities_main.csvとaffinities_main.csvで対応関係がとれていません。\n同じ形式の表にしてください。")
         return ret
 
     # 0番目の行/列がレアになっているかチェック（以降、0番目をレアモンとして処理しているため、事前にチェック）
     if name_list_m_row[0] != "レア":
-        print("affinities_main.csv, affinities_main.csvともに1行目/1列目が\nレアモンの情報ではありません。\n必ず1行目/1列目はレアモンの情報を設定してください。")
+        st.error("affinities_main.csv, affinities_main.csvともに1行目/1列目が\nレアモンの情報ではありません。\n必ず1行目/1列目はレアモンの情報を設定してください。")
         return ret
 
     # 代表してメイン血統のインデックス名を使用して、df_monstersにIDを追加する
@@ -276,7 +307,7 @@ def add_monster_id(datalist):
 
     # チェックで削除があった場合は念のため通知しておく。
     if len_before != len_after:
-        print(f"主血統名/副血統名に問題があったため、全{len_before}件から{len_before - len_after}件削除しました。必要に応じてmonsters.csvを見直してください。")
+        st.warning(f"主血統名/副血統名に問題があったため、全{len_before}件から{len_before - len_after}件削除しました。必要に応じてmonsters.csvを見直してください。")
 
     # 正常動作
     ret = True
@@ -380,7 +411,7 @@ def create_league_table(datalist):
 
 
 
-## コンボボックスの初期リスト作成
+## セレクトボックスの初期リスト作成
 def create_combo_list(datalist):
 
     # 使用する変数の再格納
@@ -408,7 +439,7 @@ def create_combo_list(datalist):
     datalist.lis_mons_names_ex_org = datalist.df_monsters_ex_org.iloc[:, 0].to_list()
     datalist.lis_mons_names_ex_org.insert(0, "")
 
-    # コンボボックスの絞込み用のDataFrame型を用意。
+    # セレクトボックスの絞込み用のDataFrame型を用意。
     datalist.df_monsters_c = df_monsters
     datalist.df_monsters_pg = df_monsters
 
@@ -420,237 +451,220 @@ def create_combo_list(datalist):
 
 
 ## ラジオボタン変更後の処理（子のコンボリスト関連の設定）
-## ★★変更保留
-def radio_set_c_cmb_th():
+def radio_set_c_cmb_th(datalist, is_reset=False):
 
-    if self.number_f1_c.get() == 0:
-        self.combos_f2_m1[0].configure(values=self.lis_mons_names_org)
-        self.df_monsters_c = self.df_monsters_org
-    elif self.number_f1_c.get() == 1:
-        self.combos_f2_m1[0].configure(values=self.lis_mons_names)
-        self.df_monsters_c = self.df_monsters
-    else:
-        self.combos_f2_m1[0].configure(values=self.lis_mons_names_ex_org)
-        self.df_monsters_c = self.df_monsters_ex_org
+    # 前回値から変更があったかの確認
+    if st.session_state.radio_c.value != st.session_state.radio_c_prev.value or is_reset:
+
+        # 前回値に今回設定値を保存
+        st.session_state.radio_c_prev = st.session_state.radio_c
+
+        # テーブルの設定
+        if st.session_state.radio_c.value == 0:
+            st.session_state.select_options[0][0] = datalist.lis_mons_names_org
+            datalist.df_monsters_c = datalist.df_monsters_org
+        elif st.session_state.radio_c.value == 1:
+            st.session_state.select_options[0][0] = datalist.lis_mons_names
+            datalist.df_monsters_c = datalist.df_monsters
+        else:
+            st.session_state.select_options[0][0] = datalist.lis_mons_names_ex_org
+            datalist.df_monsters_c = datalist.df_monsters_ex_org
+        
+        # 閾値の再設定
+        entry_set_th(st.session_state.radio_calc.value)
 
     return
 
 
 
 ## ラジオボタン変更後の処理（親祖父母のコンボリスト関連の設定）
-## ★★変更保留
-def radio_set_pg_cmb_th():
+def radio_set_pg_cmb_th(datalist, is_reset=False):
 
-    if self.number_f1_pg.get() == 0:
-        for i in range(self.num_mons-1):
-            self.combos_f2_m1[i+1].configure(values=self.lis_mons_names_org)
-        self.df_monsters_pg = self.df_monsters_org
-    elif self.number_f1_pg.get() == 1:
-        for i in range(self.num_mons-1):
-            self.combos_f2_m1[i+1].configure(values=self.lis_mons_names)
-        self.df_monsters_pg = self.df_monsters
-    else:
-        for i in range(self.num_mons-1):
-            self.combos_f2_m1[i+1].configure(values=self.lis_mons_names_ex_org)
-        self.df_monsters_pg = self.df_monsters_ex_org
+    # 前回値から変更があったかの確認
+    if st.session_state.radio_pg.value != st.session_state.radio_pg_prev.value or is_reset:
+
+        # 前回値に今回設定値を保存
+        st.session_state.radio_pg_prev = st.session_state.radio_pg
+
+        # テーブルの設定
+        if st.session_state.radio_pg.value == 0:
+            for i in range(datalist.num_monster-1):
+                st.session_state.select_options[0][i+1] = datalist.lis_mons_names_org
+            datalist.df_monsters_pg = datalist.df_monsters_org
+        elif st.session_state.radio_pg.value == 1:
+            for i in range(datalist.num_monster-1):
+                st.session_state.select_options[0][i+1] = datalist.lis_mons_names
+            datalist.df_monsters_pg = datalist.df_monsters
+        else:
+            for i in range(datalist.num_monster-1):
+                st.session_state.select_options[0][i+1] = datalist.lis_mons_names_ex_org
+            datalist.df_monsters_pg = datalist.df_monsters_ex_org
+        
+        # 閾値の再設定
+        entry_set_th(st.session_state.radio_calc.value)
 
     return
 
 
 
 # テキストボックスの内容更新
-# ★計算手法変更時確認★ → min(m)の時これ。
 # ★同じような処理で、別の設定にするなら、親関数作って、そこでフラグを分けて、子関数で処理するようにした方が管理しやすそう。以降も同じ。
-# あと、有効化/無効化もここで実施すること。(別関数作るでよい。)
-## ★★変更保留
 def entry_set_th(flag):
-    if flag == 1:
+    if flag == 0:
         entry_set_th1()
-    elif flag == 2:
+    elif flag == 1:
         entry_set_th2()
     return
 
 
-## ★★変更保留
+# min(m)の場合のテキストボックス内閾値初期化
 def entry_set_th1():
 
-    # テキストボックス初期化
-    self.entry_f3_t1.delete(0, 100)
-    self.entry_f3_t2.delete(0, 100)
-    self.entry_f3_t3.delete(0, 100)
-    self.entry_f3_t4.delete(0, 100)
-
-    # debug code start 
-    """
-    self.entry_f3_t1.insert(0, 1)
-    self.entry_f3_t2.insert(0, 1)
-    self.entry_f3_t3.insert(0, 1)
-    self.entry_f3_t4.insert(0, 1)
-
-    return
-    """
-    # debug code end
+    # 入力域の無効化
+    for i in range(8):
+        if i < 4:
+            st.session_state.input_threshs_disabled[i] = False
+        else:
+            st.session_state.input_threshs_disabled[i] = True
 
     # ラジオボタンの設定値取得、一部先行設定
-    c_num = self.number_f1_c.get()
-    pg_num = self.number_f1_pg.get()
-    self.entry_f3_t4.insert(0, 32)
+    c_num = st.session_state.radio_c.value
+    pg_num = st.session_state.radio_pg.value
 
     # ラジオボタンの内容に合わせてテキストボックスの内容を設定
     # 論理設計するともう少し最適化できそうだけど、いったんこれで。
     if c_num == 0 and pg_num == 0:
-        self.entry_f3_t1.insert(0, 109)
-        self.entry_f3_t2.insert(0, 95)
-        self.entry_f3_t3.insert(0, 33)
-
+        st.session_state[f"input_thresh0"] = 109
+        st.session_state[f"input_thresh1"] = 95
+        st.session_state[f"input_thresh2"] = 33
+        
     elif c_num == 0 and pg_num == 1:
-        self.entry_f3_t1.insert(0, 117)
-        self.entry_f3_t2.insert(0, 96)
-        self.entry_f3_t3.insert(0, 36)
+        st.session_state[f"input_thresh0"] = 117
+        st.session_state[f"input_thresh1"] = 96
+        st.session_state[f"input_thresh2"] = 36
         
     elif c_num == 0 and pg_num == 2:
-        self.entry_f3_t1.insert(0, 115)
-        self.entry_f3_t2.insert(0, 96)
-        self.entry_f3_t3.insert(0, 36)
+        st.session_state[f"input_thresh0"] = 115
+        st.session_state[f"input_thresh1"] = 96
+        st.session_state[f"input_thresh2"] = 36
         
     elif c_num == 1 and pg_num == 0:
-        self.entry_f3_t1.insert(0, 110)
-        self.entry_f3_t2.insert(0, 95)
-        self.entry_f3_t3.insert(0, 35)
+        st.session_state[f"input_thresh0"] = 110
+        st.session_state[f"input_thresh1"] = 95
+        st.session_state[f"input_thresh2"] = 35
     
     elif c_num == 1 and pg_num == 1:
-        self.entry_f3_t1.insert(0, 117)
-        self.entry_f3_t2.insert(0, 96)
-        self.entry_f3_t3.insert(0, 38)
+        st.session_state[f"input_thresh0"] = 117
+        st.session_state[f"input_thresh1"] = 96
+        st.session_state[f"input_thresh2"] = 38
         
     elif c_num == 1 and pg_num == 2:
-        self.entry_f3_t1.insert(0, 116)
-        self.entry_f3_t2.insert(0, 96)
-        self.entry_f3_t3.insert(0, 38)
+        st.session_state[f"input_thresh0"] = 116
+        st.session_state[f"input_thresh1"] = 96
+        st.session_state[f"input_thresh2"] = 38
         
     elif c_num == 2 and pg_num == 0:
-        self.entry_f3_t1.insert(0, 109)
-        self.entry_f3_t2.insert(0, 95)
-        self.entry_f3_t3.insert(0, 33)
+        st.session_state[f"input_thresh0"] = 109
+        st.session_state[f"input_thresh1"] = 95
+        st.session_state[f"input_thresh2"] = 33
         
     elif c_num == 2 and pg_num == 1:
-        self.entry_f3_t1.insert(0, 117)
-        self.entry_f3_t2.insert(0, 96)
-        self.entry_f3_t3.insert(0, 38)
+        st.session_state[f"input_thresh0"] = 117
+        st.session_state[f"input_thresh1"] = 96
+        st.session_state[f"input_thresh2"] = 38
     
     elif c_num == 2 and pg_num == 2:
-        self.entry_f3_t1.insert(0, 116)
-        self.entry_f3_t2.insert(0, 96)
-        self.entry_f3_t3.insert(0, 38)
-
-    return
-
-
-
-# テキストボックスの内容更新
-# ★計算手法変更時確認★ → min(m+s)の時これ。
-## ★★変更保留
-def entry_set_th2():
+        st.session_state[f"input_thresh0"] = 116
+        st.session_state[f"input_thresh1"] = 96
+        st.session_state[f"input_thresh2"] = 38
     
-    # テキストボックス初期化
-    self.entry_f3_t1.delete(0, 100)
-    self.entry_f3_t2.delete(0, 100)
-    self.entry_f3_t3.delete(0, 100)
-    self.entry_f3_t4.delete(0, 100)
-    self.entry_f3_t5.delete(0, 100)
-    self.entry_f3_t6.delete(0, 100)
-    self.entry_f3_t7.delete(0, 100)
-    self.entry_f3_t8.delete(0, 100)
-
-    # テキストボックス設定
-    self.entry_f3_t1.insert(0, 0)
-    self.entry_f3_t2.insert(0, 0)
-    self.entry_f3_t3.insert(0, 34)
-    self.entry_f3_t4.insert(0, 32)
-    self.entry_f3_t5.insert(0, 75)
-    self.entry_f3_t6.insert(0, 75)
-    self.entry_f3_t7.insert(0, 75)
-    self.entry_f3_t8.insert(0, 75)
+    st.session_state[f"input_thresh3"] = 32
+    st.session_state[f"input_thresh4"] = 0
+    st.session_state[f"input_thresh5"] = 0
+    st.session_state[f"input_thresh6"] = 0
+    st.session_state[f"input_thresh7"] = 0
 
     return
 
 
 
-# モンスター名のコンボボックス設定後、設定値に応じて相性閾値を変更する。
-# ★計算手法変更時確認★ → min(m)の時これ。
-## ★★変更保留
-def entry_set_th_from_cmb(flag):
-    if flag == 1:
+# min(m+s)の場合のテキストボックス内閾値初期化
+def entry_set_th2():
+
+    # 入力域の無効化
+    for i in range(8):
+        if i < 2:
+            st.session_state.input_threshs_disabled[i] = True
+        else:
+            st.session_state.input_threshs_disabled[i] = False
+
+    # 初期値設定
+    st.session_state[f"input_thresh0"] = 0
+    st.session_state[f"input_thresh1"] = 0
+    st.session_state[f"input_thresh2"] = 34
+    st.session_state[f"input_thresh3"] = 32
+    st.session_state[f"input_thresh4"] = 75
+    st.session_state[f"input_thresh5"] = 75
+    st.session_state[f"input_thresh6"] = 75
+    st.session_state[f"input_thresh7"] = 75
+
+    return
+
+
+
+# モンスター名のセレクトボックス設定後、設定値に応じて相性閾値を変更する。
+def entry_set_th_from_cmb(flag, datalist):
+    if flag == 0:
         entry_set_th_from_cmb1()
-    elif flag == 2:
-        entry_set_th_from_cmb2()
+    elif flag == 1:
+        entry_set_th_from_cmb2(datalist)
     return
 
 
-# event必要だった
-## ★★変更保留
+# モンスター名のセレクトボックス設定後、設定値に応じて相性閾値を変更する。
+# min(m)の時これ。
 def entry_set_th_from_cmb1():
     
     # 初期値設定
     total = 0
-    cnt_list = [0] * len(self.combos_f2_m1)
-    f3_t_list = []
+    cnt_list = [0] * len(st.session_state.select_options[0])
+    t_list = []
 
     # 設定値のカウント
-    for i, name in enumerate(self.combos_f2_m1):
-        if name.get() != "":
+    for i in range(len(st.session_state.select_options[0])):
+        if st.session_state[f'select_ops_name{i}'] != "":
             cnt_list[i] += 1
             total += 1
 
     # 設定値に応じて、相性閾値を算出
     if total >= 4:
-        f3_t_list = [96, 96, 30, 30]
+        t_list = [96, 96, 30, 30]
     elif total == 3:
-        f3_t_list = [107, 107, 30, 30]
+        t_list = [107, 107, 30, 30]
     elif total == 2:
-        f3_t_list = [111, 96, 32, 32]
+        t_list = [111, 96, 32, 32]
     elif total == 1:
         if cnt_list[0] == 1 or cnt_list[4] == 1:
-            f3_t_list = [112, 96, 34, 32]
+            t_list = [112, 96, 34, 32]
         else:
-            f3_t_list = [115, 96, 35, 32]
+            t_list = [115, 96, 35, 32]
     else:
         # 設定値なしの場合は初期値を再設定し、戻る。
-        self.entry_set_th1()
+        entry_set_th1()
         return
 
-    # テキストボックスの初期化
-    self.entry_f3_t1.delete(0, 100)
-    self.entry_f3_t2.delete(0, 100)
-    self.entry_f3_t3.delete(0, 100)
-    self.entry_f3_t4.delete(0, 100)
-
     # 設定値の数値チェック/テキストボックスの設定
-    if not self.is_num(self.entry_f3_t1.get()) or f3_t_list[0] < self.entry_f3_t1.get():
-        self.entry_f3_t1.delete(0, 100)
-        self.entry_f3_t1.insert(0, f3_t_list[0])
-
-    if not self.is_num(self.entry_f3_t2.get()) or f3_t_list[1] < self.entry_f3_t2.get():
-        self.entry_f3_t2.delete(0, 100)
-        self.entry_f3_t2.insert(0, f3_t_list[1])
-
-    if not self.is_num(self.entry_f3_t3.get()) or f3_t_list[2] < self.entry_f3_t3.get():
-        self.entry_f3_t3.delete(0, 100)
-        self.entry_f3_t3.insert(0, f3_t_list[2])
-
-    if not self.is_num(self.entry_f3_t4.get()) or f3_t_list[3] < self.entry_f3_t4.get():
-        self.entry_f3_t4.delete(0, 100)
-        self.entry_f3_t4.insert(0, f3_t_list[3])
+    for i in range(4):
+        if t_list[i] < st.session_state[f"input_thresh{i}"]:
+            st.session_state[f"input_thresh{i}"] = t_list[i]
 
     return
 
 
 
-# モンスター名のコンボボックス設定後、設定値に応じて相性閾値を変更する。
-# ★計算手法変更時確認★ → min(m+s)の時これ。
-# event必要だった
-## ★★変更保留
-def entry_set_th_from_cmb2(datalist, lis_names):
+# モンスター名のセレクトボックス設定後、設定値に応じて相性閾値を変更する。
+# min(m+s)の時これ。
+def entry_set_th_from_cmb2(datalist):
     
     # 初期値設定
     total = 0
@@ -658,10 +672,10 @@ def entry_set_th_from_cmb2(datalist, lis_names):
     is_raremon_pg1 = False
     is_raremon_pg2 = False
     num_rare = 0  # レアモンスター用の変数（血統ID）
-    lis_affs = [0, 0, 34, 32, 75, 75, 75, 75]  # 内部で仮設定している注意。
 
     # 設定値のカウント
-    for i, name in enumerate(lis_names):
+    for i in range(len(st.session_state.select_options[0])):
+        name = st.session_state[f'select_ops_name{i}']
         if name != "":
             total += 1
             df_monster = datalist.df_monsters[datalist.df_monsters["モンスター名"] == name]
@@ -675,55 +689,54 @@ def entry_set_th_from_cmb2(datalist, lis_names):
 
     # 設定値に応じて、相性閾値を算出            
     if total != 0:
-
-        lis_affs[4] = 70
-        lis_affs[5] = 70
-        lis_affs[6] = 70
-        lis_affs[7] = 70
+        st.session_state[f"input_thresh4"] = 70
+        st.session_state[f"input_thresh5"] = 70
+        st.session_state[f"input_thresh6"] = 70
+        st.session_state[f"input_thresh7"] = 70
 
         if is_raremon_c:
-
-            lis_affs[4] = 64
-            lis_affs[5] = 64
-            lis_affs[6] = 64
-            lis_affs[7] = 64
+            st.session_state[f"input_thresh4"] = 64
+            st.session_state[f"input_thresh5"] = 64
+            st.session_state[f"input_thresh6"] = 64
+            st.session_state[f"input_thresh7"] = 64
         
         if is_raremon_pg1:
-            lis_affs[4] = 64
-            lis_affs[6] = 64
+            st.session_state[f"input_thresh4"] = 64
+            st.session_state[f"input_thresh6"] = 64
         
         if is_raremon_pg2:
-            lis_affs[5] = 64
-            lis_affs[7] = 64
+            st.session_state[f"input_thresh5"] = 64
+            st.session_state[f"input_thresh7"] = 64
 
     else:
-        lis_affs[4] = 75
-        lis_affs[5] = 75
-        lis_affs[6] = 75
-        lis_affs[7] = 75
+        entry_set_th2()
 
-    return lis_affs
+    return
 
 
 
-# コンボボックスで値設定後のモンスター名リストの整形
-# event必要だった
-## ★★変更保留
-def combo_set_cmb(num):
-    
-    # 設定変更されたコンボボックスを判定して、参照元DataFrameを設定
-    if num == 0:
-        df = self.df_monsters_c
+# セレクトボックスで値設定後のモンスター名リストの整形
+# ★streamlitでオプションリストの再構成を実施すると、
+# ★リストの大本を参照しているのか、キーが""となってしまうため、再設定する。
+def select_set_ops(datalist, who):
+
+    # 設定値の保存
+    name_main = st.session_state[f"select_ops_main{who}"]
+    name_sub = st.session_state[f"select_ops_sub{who}"]
+
+    # 設定変更されたセレクトボックスを判定して、参照元DataFrameを設定
+    if who == 0:
+        df = datalist.df_monsters_c
     else:
-        df = self.df_monsters_pg
+        df = datalist.df_monsters_pg
 
     # メイン血統を考慮して、モンスター名から不要レコードを削除
-    if self.combos_f2_m2[num].get() != "":
-        df = df[df["主血統"] == self.combos_f2_m2[num].get()]
+    if st.session_state[f"select_ops_main{who}"] != "":
+        df = df[df["主血統"] == st.session_state[f"select_ops_main{who}"]]
 
     # サブ血統を考慮して、モンスター名から不要レコードを削除
-    if self.combos_f2_m3[num].get() != "":
-        df = df[df["副血統"] == self.combos_f2_m3[num].get()]
+    if st.session_state[f"select_ops_sub{who}"] != "":
+        df = df[df["副血統"] == st.session_state[f"select_ops_sub{who}"]]
 
     # それぞれリストに変換して、必要に応じて重複を削除し、先頭に空白を設定。
     # モンスター名
@@ -743,59 +756,44 @@ def combo_set_cmb(num):
     lis3.insert(0, "")
     
     # 設定
-    self.combos_f2_m1[num].configure(values=lis1)
-    self.combos_f2_m2[num].configure(values=lis2)
-    self.combos_f2_m3[num].configure(values=lis3)
+    st.session_state.select_options[0][who]=lis1
+    st.session_state.select_options[1][who]=lis2
+    st.session_state.select_options[2][who]=lis3
 
-    return
-
-
-
-# コンボボックスに設定された値をリセット
-## ★★変更保留
-def button_reset_cmb():
-    
-    # モンスター名のコンボボックス参照リストの初期化
-    self.radio_set_c_cmb_th()
-    self.radio_set_pg_cmb_th()
-    
-    # コンボボックスの記載内容の初期化
-    for i in range(self.num_mons):
-        # 絞込み用リストのクリア
-        self.combos_f2_m2[i].configure(values=self.lis_main_ped)
-        self.combos_f2_m3[i].configure(values=self.lis_sub_ped)
-        # テキストクリア
-        self.combos_f2_m1[i].set("")
-        self.combos_f2_m2[i].set("")
-        self.combos_f2_m3[i].set("")
-    
-    # 合わせて閾値もリセット。
-    self.entry_set_th1()
-    self.entry_set_th2()
+    # 一時退避していた値を元に戻す
+    st.session_state[f"select_ops_name{who}"] = ""
+    st.session_state[f"select_ops_main{who}"] = name_main
+    st.session_state[f"select_ops_sub{who}"]  = name_sub
 
     return
 
 
 
 # 検索開始ボタン押下後の動作
-def button_calc_affinity(datalist, lis_choice_table, lis_names, lis_affs):
+def button_calc_affinity(datalist):
     
     ### 事前設定
 
+    # 検索フラグをON
+    st.session_state.is_search_once_more = True
+
+    # ログのクリア
+    init_log()
+
     # 実行時刻を出力
-    print("==================================" + datetime.datetime.now().strftime('%Y年%m月%d日 %H:%M:%S') + "==================================")
+    write_log("========================" + datetime.datetime.now().strftime('%Y年%m月%d日 %H:%M:%S') + "========================")
 
 
     ### 設定画面で設定した内容を各変数に再格納。
 
     # モンスター名の設定
-    child   = Monster(lis_names[0])
-    parent1 = Monster(lis_names[1])
-    granpa1 = Monster(lis_names[2])
-    granma1 = Monster(lis_names[3])
-    parent2 = Monster(lis_names[4])
-    granpa2 = Monster(lis_names[5])
-    granma2 = Monster(lis_names[6])
+    child   = Monster(datalist.lis_names[0][0])
+    parent1 = Monster(datalist.lis_names[0][1])
+    granpa1 = Monster(datalist.lis_names[0][2])
+    granma1 = Monster(datalist.lis_names[0][3])
+    parent2 = Monster(datalist.lis_names[0][4])
+    granpa2 = Monster(datalist.lis_names[0][5])
+    granma2 = Monster(datalist.lis_names[0][6])
     Monster_info = [child, parent1, granpa1, granma1, parent2, granpa2, granma2]
 
     # 主血統/副血統の設定
@@ -804,19 +802,16 @@ def button_calc_affinity(datalist, lis_choice_table, lis_names, lis_affs):
 
     # 相性値閾値設定
     # ★計算手法変更時確認★
-    thresh_aff = ThreshAff(lis_affs[0], lis_affs[1], lis_affs[2], lis_affs[3], 
-                           lis_affs[4], lis_affs[5], lis_affs[6], lis_affs[7])
+    thresh_aff = ThreshAff(st.session_state[f"input_thresh0"], st.session_state[f"input_thresh1"],
+                           st.session_state[f"input_thresh2"], st.session_state[f"input_thresh3"], 
+                           st.session_state[f"input_thresh4"], st.session_state[f"input_thresh5"], 
+                           st.session_state[f"input_thresh6"], st.session_state[f"input_thresh7"])
     
-    #ret, thresh_aff = self.check_aff_thresh()
-    #if not ret:
-    #    self.show_error("相性値閾値設定欄にて、不正な文字列が入力されています。\n数値を入れてください。")
-    #    return
-
     # テーブル取得
-    set_using_table(datalist, lis_choice_table)
+    set_using_table(datalist)
 
     # ログの設定
-    set_log(Monster_info, lis_choice_table, thresh_aff)
+    set_log(Monster_info, datalist.lis_choice_table, thresh_aff)
     
 
     ### 相性値計算実行/表示処理
@@ -828,141 +823,43 @@ def button_calc_affinity(datalist, lis_choice_table, lis_names, lis_affs):
     start_time = time.perf_counter()
     # ★計算手法変更時確認★
     # ret, self.df_affinities = self.calc_affinity(Monster_info, thresh_aff, lis_mons_league_tb_c, lis_mons_league_tb_pg)
-    ret, datalist.df_affinities = calc_affinity_m_s(Monster_info, thresh_aff, datalist)
+    ret, st.session_state.df_affinities = calc_affinity_m_s(Monster_info, thresh_aff, datalist)
     end_time = time.perf_counter()
     elapsed_time = end_time - start_time
-    print_Log(f"◎処理時間： {elapsed_time:.1f}秒")
+    write_log(f"◎処理時間： {elapsed_time:.1f}秒")
 
     # エラー処理(処理して条件が合えば、以下の処理、合わなければ、書き込み無効化までジャンプ)
     if ret :
         
         # テーブルの整形
-        del datalist.df_affinities["index"]
-        st.dataframe(datalist.df_affinities, width=2000, height=500)
+        del st.session_state.df_affinities["index"]
 
     else:
         # 何もしないで次へ
-        st.write("検索結果:0")
         pass
 
 
     ### 後処理
 
+
     return ret
 
 
 
-# 画面へのメッセージ出力
-def print_Log(message, color="black"):
-    
-    ## タグの設定
-    # self.text_area_s_f1.tag_config('colored', foreground=color)
-
-    ## 出力
-    # self.text_area_s_f1.insert(tk.END, message+"\n", 'colored')
-    # self.text_area_s_f1.see('end')
-    print(message)
-
-    return
-
-
-
-# 検索時に使用した各種値をログに出力する。
-def set_log(Monster_info, lis_choice_table, thresh_aff):
-
-    message_list1 = ['純血統+レア','全モンスター', '全モンスター(純血統のみ除く)']
-    message_list2 = ["子", "親①", "祖父①", "祖母①", "親②", "祖父②", "祖母②"]
-
-    # 参照テーブル
-    print_Log(f"◎モンスター参照テーブル：")
-    print_Log(f"　　　　　子：{message_list1[lis_choice_table[0]]}")
-    print_Log(f"　　親祖父母：{message_list1[lis_choice_table[1]]}")
-
-    # 指定モンスター
-    print_Log(f"◎モンスター名：")
-    for i, monster in enumerate(Monster_info):
-        size1 = 10 - len(message_list2[i])
-        if monster.name.startswith("("):
-            size2 = 24 - len(monster.name)
-        else:
-            size2 = 22 - len(monster.name)
-        size3 = 12 - len(monster.pedigree1)
-        size4 = 12 - len(monster.pedigree2)
-        print_Log(f"{message_list2[i]:>{size1}}:{monster.name:>{size2}}, メイン：{monster.pedigree1:>{size3}}, サブ：{monster.pedigree2:>{size4}}")
-
-    # 閾値
-    print_Log(f"◎相性値閾値：")
-    print_Log(f"　　a.子-親-祖父-祖母メイン血統の相性値閾値　　　　　　　　　　 ：{thresh_aff.th_ped1_cpg}")
-    print_Log(f"　　b.子-親-祖父-祖母サブ血統の相性値閾値　　　　　　　　　　　 ：{thresh_aff.th_ped2_cpg}")
-    print_Log(f"　　c.親①-親②メイン血統の相性値閾値　　　　　　　　　　　　　 ：{thresh_aff.th_ped1_pp}")
-    print_Log(f"　　d.親①-親②サブ血統の相性値閾値　　　　　　　　　　　　　　 ：{thresh_aff.th_ped2_pp}")
-    print_Log(f"　　e.子-親①間のメイン/サブ血統相性値合計閾値　　　　　　　　　：{thresh_aff.th_p1}")
-    print_Log(f"　　f.子-親②間のメイン/サブ血統相性値合計閾値　　　　　　　　　：{thresh_aff.th_p2}")
-    print_Log(f"　　g.親①家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg1}")
-    print_Log(f"　　h.親②家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg2}")
-
-    return
-
-
-
-# 数値チェック関数
-def is_num(s):
-    try:
-        float(s)
-    except ValueError:
-        return False
-    else:
-        return True
-
-
-
-# 相性閾値の設定値確認/値設定
-# ★計算手法変更時確認★ → むやみにテキストボックス無効化すると、ここでエラーになる。
-def check_aff_thresh():
-
-    ret = True
-    thresh_aff = ThreshAff()
-    
-    # 設定値の数値チェック/設定
-    if not self.is_num(self.entry_f3_t1.get()):
-        ret = False
-    elif not self.is_num(self.entry_f3_t2.get()):
-        ret = False
-    elif not self.is_num(self.entry_f3_t3.get()):
-        ret = False
-    elif not self.is_num(self.entry_f3_t4.get()):
-        ret = False
-    elif not self.is_num(self.entry_f3_t5.get()):
-        ret = False
-    elif not self.is_num(self.entry_f3_t6.get()):
-        ret = False
-    elif not self.is_num(self.entry_f3_t7.get()):
-        ret = False
-    elif not self.is_num(self.entry_f3_t8.get()):
-        ret = False
-    else:
-        # 設定
-        thresh_aff = ThreshAff(float(self.entry_f3_t1.get()), float(self.entry_f3_t2.get()), float(self.entry_f3_t3.get()), float(self.entry_f3_t4.get())
-                                , float(self.entry_f3_t5.get()), float(self.entry_f3_t6.get()), float(self.entry_f3_t7.get()), float(self.entry_f3_t8.get()))
-
-    return ret, thresh_aff
-
-
-
 # 相性値計算時に使用するテーブルを取得
-def set_using_table(datalist, lis_choice_table):
+def set_using_table(datalist):
 
     # オプション確認
-    if lis_choice_table[0] == 0:
+    if datalist.lis_choice_table[0].value == 0:
         lis_mons_league_tb_c = datalist.lis_mons_league_tb_org
-    elif lis_choice_table[1] == 1:
+    elif datalist.lis_choice_table[0].value == 1:
         lis_mons_league_tb_c = datalist.lis_mons_league_tb_all
     else:
         lis_mons_league_tb_c = datalist.lis_mons_league_tb_all_org
         
-    if lis_choice_table[1] == 0:
+    if datalist.lis_choice_table[1].value == 0:
         lis_mons_league_tb_pg = datalist.lis_mons_league_tb_org
-    elif lis_choice_table[1] == 1:
+    elif datalist.lis_choice_table[1].value == 1:
         lis_mons_league_tb_pg = datalist.lis_mons_league_tb_all
     else:
         lis_mons_league_tb_pg = datalist.lis_mons_league_tb_all_org
@@ -1118,9 +1015,9 @@ def calc_affinity(Monster_info, thresh_aff, lis_mons_league_tb_c, lis_mons_leagu
                                     if parent2 not in lis_parent1_2[parent1]:
                                         lis_parent1_2[parent1].append(parent2)
                                     i += 1
-    self.print_Log(f"◎子-親①-祖父①-祖母②の組み合わせ：{i:,}件")
+    write_log(f"◎子-親①-祖父①-祖母②の組み合わせ：{i:,}件")
     if i >= N:
-        self.show_error(f"候補が{N}件を超えたため停止します。\n閾値やリーグ表の見直しを実施してください。")
+        st.error(f"候補が{N}件を超えたため停止します。\n閾値やリーグ表の見直しを実施してください。")
         return ret, df_affinities
     
     # 子-親②-祖父②-祖母②のメイン/サブ血統(あり得ない組み合わせ、基準値以下はスキップ)
@@ -1162,9 +1059,9 @@ def calc_affinity(Monster_info, thresh_aff, lis_mons_league_tb_c, lis_mons_leagu
                                     if parent2 not in lis_parent2_2[parent1]:
                                         lis_parent2_2[parent1].append(parent2)
                                     j += 1
-    self.print_Log(f"◎子-親②-祖父②-祖母②の組み合わせ：{j:,}件")
+    write_log(f"◎子-親②-祖父②-祖母②の組み合わせ：{j:,}件")
     if j >= N:
-        self.show_error(f"候補が{N}件を超えたため停止します。\n閾値やリーグ表の見直しを実施してください。")
+        st.error(f"候補が{N}件を超えたため停止します。\n閾値やリーグ表の見直しを実施してください。")
         return ret, df_affinities
     
     # 親①-親②のメイン/サブ血統(基準値以下はスキップ)
@@ -1192,9 +1089,9 @@ def calc_affinity(Monster_info, thresh_aff, lis_mons_league_tb_c, lis_mons_leagu
                                                         cpg2_record[3], cpg2_record[4]] )
 
     # データフレーム型に変換してソート。
-    self.print_Log(f"◎子-両親-祖父母①-祖父母②の組み合わせ：{len(lis_affinities):,}件")
+    write_log(f"◎子-両親-祖父母①-祖父母②の組み合わせ：{len(lis_affinities):,}件")
     if len(lis_affinities) == 0:
-        self.print_Log("候補0件。（他のログは出力しません。）")
+        write_log("候補0件。（他のログは出力しません。）")
         return ret, df_affinities
 
     df_affinities = pd.DataFrame( lis_affinities )
@@ -1292,9 +1189,9 @@ def calc_affinity_m_s(Monster_info, thresh_aff, datalist):
                                     if parent2 not in lis_parent1_2[parent1]:
                                         lis_parent1_2[parent1].append(parent2)
                                     i += 1
-    print_Log(f"◎子-親①-祖父①-祖母②の組み合わせ：{i:,}件")
+    write_log(f"◎子-親①-祖父①-祖母②の組み合わせ：{i:,}件")
     if i >= N:
-        print(f"候補が{N}件を超えたため停止します。\n閾値やリーグ表の見直しを実施してください。")
+        st.error(f"候補が{N}件を超えたため停止します。\n閾値やリーグ表の見直しを実施してください。")
         return ret, df_affinities
     
     # 子-親②-祖父②-祖母②のメイン/サブ血統(あり得ない組み合わせ、基準値以下はスキップ)
@@ -1348,9 +1245,9 @@ def calc_affinity_m_s(Monster_info, thresh_aff, datalist):
                                     if parent2 not in lis_parent2_2[parent1]:
                                         lis_parent2_2[parent1].append(parent2)
                                     j += 1
-    print_Log(f"◎子-親②-祖父②-祖母②の組み合わせ：{j:,}件")
+    write_log(f"◎子-親②-祖父②-祖母②の組み合わせ：{j:,}件")
     if j >= N:
-        print(f"候補が{N}件を超えたため停止します。\n閾値やリーグ表の見直しを実施してください。")
+        st.error(f"候補が{N}件を超えたため停止します。\n閾値やリーグ表の見直しを実施してください。")
         return ret, df_affinities
     
     # 親①-親②のメイン/サブ血統(基準値以下はスキップ)
@@ -1378,9 +1275,9 @@ def calc_affinity_m_s(Monster_info, thresh_aff, datalist):
                                                         cpg2_record[3], cpg2_record[4]] )
 
     # データフレーム型に変換してソート。
-    print_Log(f"◎子-両親-祖父母①-祖父母②の組み合わせ：{len(lis_affinities):,}件")
+    write_log(f"◎子-両親-祖父母①-祖父母②の組み合わせ：{len(lis_affinities):,}件")
     if len(lis_affinities) == 0:
-        print_Log("候補0件。（他のログは出力しません。）")
+        write_log("候補0件。（他のログは出力しません。）")
         return ret, df_affinities
 
     df_affinities = pd.DataFrame( lis_affinities )
@@ -1393,49 +1290,284 @@ def calc_affinity_m_s(Monster_info, thresh_aff, datalist):
 
 
 
-st.title("LINE：モンスターファーム")
-st.title(" モンスター相性計算Webアプリ")
-st.write("Version 3.0.0 （仮の仮の仮の仮の仮作成版。★★名前募集してます★★）")
+# セッション系の初期化
+def init_session_state(datalist):
+
+    # ラジオボタンの選択結果保存領域作成
+    if "radio_calc" not in st.session_state:
+        st.session_state.radio_calc = RadioChoiceTable1.min_m十s式
+
+    # ラジオボタンの選択結果保存領域作成
+    if "radio_c" not in st.session_state:
+        st.session_state.radio_c = RadioChoiceTable2.全モンスター
+    if "radio_pg" not in st.session_state:
+        st.session_state.radio_pg = RadioChoiceTable2.全モンスター
+    if "radio_c_prev" not in st.session_state:
+        st.session_state.radio_c_prev = RadioChoiceTable2.全モンスター
+    if "radio_pg_prev" not in st.session_state:
+        st.session_state.radio_pg_prev = RadioChoiceTable2.全モンスター
+
+    # セレクトボックス選択結果保存域作成
+    for i in range(datalist.num_monster):
+        if f"select_ops_name{i}" not in st.session_state:
+            st.session_state[f"select_ops_name{i}"] = ""
+        elif f"select_ops_main{i}" not in st.session_state:
+            st.session_state[f"select_ops_main{i}"] = ""
+        elif f"select_ops_sub{i}" not in st.session_state:
+            st.session_state[f"select_ops_sub{i}"] = ""
+
+    # 全セレクトボックスの初期リスト設定
+    if "select_options" not in st.session_state:
+        st.session_state.select_options = [ [ 0 for j in range(datalist.num_monster) ] for i in range(datalist.num_kind)]
+        for i in range(datalist.num_monster):
+            st.session_state.select_options[0][i] = datalist.lis_mons_names
+            st.session_state.select_options[1][i] = datalist.lis_main_ped
+            st.session_state.select_options[2][i] = datalist.lis_sub_ped
+
+    # 閾値設定箇所の有効/無効化フラグ
+    if f"input_threshs_disabled" not in st.session_state:
+        st.session_state.input_threshs_disabled = [False] * 8
+
+    # 閾値関連の領域初期化
+    for i in range(8):
+        if f"input_thresh{i}" not in st.session_state:
+            st.session_state[f"input_thresh{i}"] = 0
+            entry_set_th(st.session_state.radio_calc.value)
+    
+    # 結果領域の初期化
+    if f"df_affinities" not in st.session_state:
+        st.session_state.df_affinities = pd.DataFrame()
+    
+    # 1回以上検索しているかどうかのフラグ
+    if f"is_search_once_more" not in st.session_state:
+        st.session_state.is_search_once_more = False
+
+    return
 
 
-#### 事前設定
-# 参照ファイル名の設定(配下でインスタンス変数を作成しているため注意。)
-ret, dic_file_names = set_input_filename()
 
-# 付属データの読み込み/リストへの変換(配下でインスタンス変数を作成しているため注意。)
-datalist = read_all_data(dic_file_names)
+# ラジオボタン作成関数
+def create_radio_button(datalist):
+    
+    # テーブル選択結果格納場所の初期化
+    datalist.lis_choice_table = [st.session_state.radio_c.value, st.session_state.radio_pg.value]
+    
+    # ラジオボタン作成
+    datalist.lis_choice_table[0] = st.radio("子",      RadioChoiceTable2, horizontal=True, key="radio_c", on_change=radio_set_c_cmb_th, args=(datalist, ), help="検索時に使用する子のモンスター名テーブルを設定します。")
+    datalist.lis_choice_table[1] = st.radio("親祖父母", RadioChoiceTable2, horizontal=True, key="radio_pg", on_change=radio_set_pg_cmb_th, args=(datalist, ), help="検索時に使用する親祖父母のモンスター名テーブルを設定します。")
 
-# モンスター名リストに主血統ID/副血統IDを相性表を元に追加
-ret = add_monster_id(datalist)
+    return
 
-# コンボボックス向けレアモンのレコードを追加
-add_raremon(datalist)
 
-# 読み込んだデータからリーグ表作成(配下でインスタンス変数を作成しているため注意。)
-create_league_table(datalist)
+# セレクトボックス作成関数
+def create_select_box(datalist):
+    
+    # ラベルの初期化
+    lis_s_ops_labels = ['子', '親①', '祖父①', '祖母①', '親②', '祖父②', '祖母②']
 
-# コンボボックス用の初期リストの作成(配下でインスタンス変数を作成しているため注意。)
-create_combo_list(datalist)
+    # セレクトボックス作成
+    for i in range(datalist.num_monster):
+        col1, col2, col3 = st.columns(datalist.num_kind)
+        with col1:
+            datalist.lis_names[0][i] = st.selectbox(lis_s_ops_labels[i], st.session_state.select_options[0][i], index = 0, key=f'select_ops_name{i}', on_change=entry_set_th_from_cmb, args=(st.session_state.radio_calc.value, datalist), help="相性を検索したいモンスター名を設定します。空欄の場合、全モンスターを候補とします。")
+            # datalist.lis_names[0][i] = st.selectbox(lis_s_ops_labels[i], st.session_state.select_options[0][i], index = 0, key=f'select_ops_name{i}', help="相性を検索したいモンスター名を設定します。空欄の場合、全モンスターを候補とします。")
+        with col2:
+            datalist.lis_names[1][i] = st.selectbox('メイン血統',         st.session_state.select_options[1][i], index = 0, key=f'select_ops_main{i}', on_change=select_set_ops, args=(datalist, i), help="モンスターのメイン血統を設定します。(絞込み用のため、不要なら設定不要。)")
+        with col3:
+            datalist.lis_names[2][i] = st.selectbox('サブ血統',           st.session_state.select_options[2][i], index = 0, key=f'select_ops_sub{i}', on_change=select_set_ops, args=(datalist, i), help="モンスターのメイン血統を設定します。(絞込み用のため、不要なら設定不要。)")
+    
+    return
 
-# テーブル選択結果格納場所
-lis_choice_table = [1, 1]
 
-# 名前格納用リスト
-lis_names = [""]*7
 
-# コンボボックス
-lis_names[0] = st.selectbox('子', datalist.lis_mons_names, index = 0, placeholder="空白、または、何か選択してください")
-lis_names[1] = st.selectbox('親①', datalist.lis_mons_names, index = 0, placeholder="空白、または、何か選択してください")
-lis_names[2] = st.selectbox('祖父①', datalist.lis_mons_names, index = 0, placeholder="空白、または、何か選択してください")
-lis_names[3] = st.selectbox('祖母①', datalist.lis_mons_names, index = 0, placeholder="空白、または、何か選択してください")
-lis_names[4] = st.selectbox('親②', datalist.lis_mons_names, index = 0, placeholder="空白、または、何か選択してください")
-lis_names[5] = st.selectbox('祖父②', datalist.lis_mons_names, index = 0, placeholder="空白、または、何か選択してください")
-lis_names[6] = st.selectbox('祖母②', datalist.lis_mons_names, index = 0, placeholder="空白、または、何か選択してください")
+# セレクトボックスの初期化
+def reset_select_box(datalist):
 
-# 検索
-if st.button('検索開始！'):
-    with st.spinner('processiong...'):
-        # 閾値取得(暫定)
-        lis_affs = entry_set_th_from_cmb2(datalist, lis_names)
-        ret = button_calc_affinity(datalist, lis_choice_table, lis_names, lis_affs)
+    # モンスター名のコンボボックス参照リストの初期化
+    radio_set_c_cmb_th(datalist, True)
+    radio_set_pg_cmb_th(datalist, True)
+
+    # コンボボックスの内容とか初期化
+    for i in range(datalist.num_monster):
+        datalist.lis_names[0][i] = ""
+        datalist.lis_names[1][i] = ""
+        datalist.lis_names[2][i] = ""
+        st.session_state[f"select_ops_name{i}"] = ""
+        st.session_state[f"select_ops_main{i}"] = ""
+        st.session_state[f"select_ops_sub{i}"] = ""
+        st.session_state.select_options[1][i] = datalist.lis_main_ped
+        st.session_state.select_options[2][i] = datalist.lis_sub_ped
+
+    return
+
+
+
+# ログ領域への書き込み実施
+def write_log(message):
+
+    # 保存域の初期化
+    if "log" not in st.session_state:
+        st.session_state.log = ""
+    
+    # メッセージに追加
+    st.session_state.log += message + "\n"
+
+    return
+
+
+
+# ログ領域のWeb上への表示
+def print_log():
+    
+    txt = st.text_area("ログ情報", st.session_state.log, height=600, disabled=True, help="設定情報や検索時の途中経過について出力されます。")
+
+    return
+
+
+
+# ログ情報の初期化
+def init_log():
+
+    st.session_state.log = ""
+
+    return
+
+
+# 自端末へのログの保存
+def save_log():
+    pass
+
+
+# 検索時に使用した各種値をログに出力する。
+def set_log(Monster_info, lis_choice_table, thresh_aff):
+
+    message_list1 = ['純血統+レア','全モンスター', '全モンスター(純血統のみ除く)']
+    message_list2 = ["子", "親①", "祖父①", "祖母①", "親②", "祖父②", "祖母②"]
+
+    # 参照テーブル
+    write_log(f"◎モンスター参照テーブル：")
+    write_log(f"　　　　　子：{message_list1[lis_choice_table[0].value]}")
+    write_log(f"　　親祖父母：{message_list1[lis_choice_table[1].value]}")
+
+    # 指定モンスター
+    write_log(f"◎モンスター名：")
+    for i, monster in enumerate(Monster_info):
+        size1 = 10 - len(message_list2[i])
+        if monster.name.startswith("("):
+            size2 = 24 - len(monster.name)
+        else:
+            size2 = 22 - len(monster.name)
+        size3 = 12 - len(monster.pedigree1)
+        size4 = 12 - len(monster.pedigree2)
+        write_log(f"{message_list2[i]:>{size1}}:{monster.name:>{size2}}, メイン：{monster.pedigree1:>{size3}}, サブ：{monster.pedigree2:>{size4}}")
+
+    # 閾値
+    write_log(f"◎相性値閾値：")
+    write_log(f"　　a.子-親-祖父-祖母メイン血統の相性値閾値　　　　　　　　　　 ：{thresh_aff.th_ped1_cpg}")
+    write_log(f"　　b.子-親-祖父-祖母サブ血統の相性値閾値　　　　　　　　　　　 ：{thresh_aff.th_ped2_cpg}")
+    write_log(f"　　c.親①-親②メイン血統の相性値閾値　　　　　　　　　　　　　 ：{thresh_aff.th_ped1_pp}")
+    write_log(f"　　d.親①-親②サブ血統の相性値閾値　　　　　　　　　　　　　　 ：{thresh_aff.th_ped2_pp}")
+    write_log(f"　　e.子-親①間のメイン/サブ血統相性値合計閾値　　　　　　　　　：{thresh_aff.th_p1}")
+    write_log(f"　　f.子-親②間のメイン/サブ血統相性値合計閾値　　　　　　　　　：{thresh_aff.th_p2}")
+    write_log(f"　　g.親①家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg1}")
+    write_log(f"　　h.親②家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg2}")
+
+    return
+
+
+
+def main():
+
+    st.title("Sツール")
+    st.write("Version 3.0.0a")
+
+
+    #### 事前設定
+    # 参照ファイル名の設定(配下でインスタンス変数を作成しているため注意。)
+    ret, dic_file_names = set_input_filename()
+    if not ret:
+        return 
+
+    # 付属データの読み込み/リストへの変換(配下でインスタンス変数を作成しているため注意。)
+    datalist = read_all_data(dic_file_names)
+
+    # モンスター名リストに主血統ID/副血統IDを相性表を元に追加
+    ret = add_monster_id(datalist)
+    if not ret:
+        return 
+
+    # セレクトボックス向けレアモンのレコードを追加
+    add_raremon(datalist)
+
+    # 読み込んだデータからリーグ表作成(配下でインスタンス変数を作成しているため注意。)
+    create_league_table(datalist)
+
+    # セレクトボックス用の初期リストの作成(配下でインスタンス変数を作成しているため注意。)
+    create_combo_list(datalist)
+
+    # セッション初期化
+    init_session_state(datalist)
+
+
+    # ラジオボタン作成
+    st.write('')
+    st.header('モンスター参照テーブル', help="子/親祖父母毎に検索で使用するテーブルを設定します。")
+    create_radio_button(datalist)
+
+
+    # リセット/セレクトボックスの作成
+    st.write('')
+    st.header('モンスター名設定', help="ここで検索したいモンスターの設定をします。全て空白でも検索可能ですが、相性値閾値設定次第で候補過多で出力されなくなるため注意。(メイン/サブ血統欄はモンスター名絞込み用の設定です。")
+    if st.button('モンスター名選択リセット', help="選択済みのセレクトボックスの内容を初期化します。"):
+        reset_select_box(datalist)
+        create_select_box(datalist)
+    else:
+        create_select_box(datalist)
+
+
+    # 詳細設定欄の作成
+    st.write('')
+    st.header('詳細設定')
+    if st.checkbox("詳細に設定したい場合はチェックをつけてください。"):
+        
+        # 入力エリアの作成
+        st.write('')
+        st.subheader('相性値閾値設定', help="本項目での設定値未満の相性値の場合、検索候補から除外します。（よくわからない場合はそのままで問題なし。）")
+
+        # 初期化した閾値を使用してテキストエリアを作成
+        label_names = ["子-親-祖父-祖母メイン血統の相性値閾値", "子-親-祖父-祖母サブ血統の相性値閾値", 
+                       "親①-親②メイン血統の相性値閾値", "親①-親②サブ血統の相性値閾値", 
+                       "子-親①間のメイン/サブ血統相性値合計閾値", "子-親②間のメイン/サブ血統相性値合計閾値",
+                       "親①家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値", 
+                       "親②家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値"]
+        
+        # テキスト入力エリアを設定
+        for i in range(len(label_names)):
+            st.number_input(label_names[i], min_value=0, value=datalist.lis_threshs[i], key=f"input_thresh{i}", disabled=st.session_state.input_threshs_disabled[i])
+
+
+    # 検索
+    st.write('')
+    st.header('検索')
+    if st.button('検索開始！'):
+        with st.spinner('processiong...'):
+            ret = button_calc_affinity(datalist)
+    
+
+    # 結果の表示
+    st.write('')
+    st.header('検索結果', help="「検索開始！」ボタン押下後に設定値および結果が出力されます。")
+    if st.session_state.is_search_once_more:
+        print_log()
+        st.dataframe(st.session_state.df_affinities, width=2000, height=500, use_container_width=True)
+        # length = len(st.session_state.df_affinities.index) if len(st.session_state.df_affinities.index) < 10000 else 10000
+        # st.dataframe(st.session_state.df_affinities.loc[0:length, :], width=2000, height=500)
+    else:
+        pass
+
+
+
+# 呼び出し
+if __name__ == '__main__':
+    main()
 
