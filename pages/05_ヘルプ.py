@@ -28,25 +28,52 @@ import time
 
 
 
-# st.title("ヘルプ -作成中-")
+def main():
 
-st.title("LINE：モンスターファーム モンスター相性計算アプリ")
-st.write("Version 3.0.0")
+    # 見出しについてしまうリンクを削除
+    st.html(
+        body="""
+            <style>
+                /* hide hyperlink anchors generated next to headers */
+                h1 > div > a {
+                    display: none !important;
+                }
+                h2 > div > a {
+                    display: none !important;
+                }
+                h3 > div > a {
+                    display: none !important;
+                }
+                h4 > div > a {
+                    display: none !important;
+                }
+                h5 > div > a {
+                    display: none !important;
+                }
+                h6 > div > a {
+                    display: none !important;
+                }
+            </style>
+        """,
+    )
+    st.title("ヘルプ -作成中-")
 
-"""
-#  参照データ設定
-## 所持モンスター設定
-## モンスター参照テーブル設定
-"""
 
-"""
-# 検索モンスター名設定
-"""
+    
+    #  参照データ設定
+    ## 所持モンスター設定
+    ## モンスター参照テーブル設定
+    
+    # 検索モンスター名設定
+    
+    #  検索オプション
+    ## 計算手法設定
+    ## 出力形式設定
+    ## 相性値閾値設定
+    ## 共通秘伝設定
+    
 
-"""
-#  検索オプション
-## 計算手法設定
-## 出力形式設定
-## 相性値閾値設定
-## 共通秘伝設定
-"""
+
+# 呼び出し
+if __name__ == '__main__':
+    main()

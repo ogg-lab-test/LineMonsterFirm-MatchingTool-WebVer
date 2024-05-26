@@ -28,4 +28,39 @@ import time
 
 
 
-st.title("リリースノート -作成中-")
+def main():
+
+    # 見出しについてしまうリンクを削除
+    st.html(
+        body="""
+            <style>
+                /* hide hyperlink anchors generated next to headers */
+                h1 > div > a {
+                    display: none !important;
+                }
+                h2 > div > a {
+                    display: none !important;
+                }
+                h3 > div > a {
+                    display: none !important;
+                }
+                h4 > div > a {
+                    display: none !important;
+                }
+                h5 > div > a {
+                    display: none !important;
+                }
+                h6 > div > a {
+                    display: none !important;
+                }
+            </style>
+        """,
+    )
+
+    st.title("リリースノート -作成中-")
+
+
+
+# 呼び出し
+if __name__ == '__main__':
+    main()

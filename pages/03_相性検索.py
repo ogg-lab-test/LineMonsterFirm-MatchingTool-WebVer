@@ -1478,6 +1478,33 @@ def set_log(Monster_info, lis_choice_table, thresh_aff):
 
 def main():
 
+    # 見出しについてしまうリンクを削除
+    st.html(
+        body="""
+            <style>
+                /* hide hyperlink anchors generated next to headers */
+                h1 > div > a {
+                    display: none !important;
+                }
+                h2 > div > a {
+                    display: none !important;
+                }
+                h3 > div > a {
+                    display: none !important;
+                }
+                h4 > div > a {
+                    display: none !important;
+                }
+                h5 > div > a {
+                    display: none !important;
+                }
+                h6 > div > a {
+                    display: none !important;
+                }
+            </style>
+        """,
+    )
+
     st.title("Sツール")
     st.write("Version 3.0.0a")
 
