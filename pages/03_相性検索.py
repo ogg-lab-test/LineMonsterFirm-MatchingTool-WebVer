@@ -25,7 +25,12 @@ import pandas as pd
 import datetime
 import os
 import time
-from enum import Enum
+
+import psutil
+
+from st_aggrid import AgGrid
+from st_aggrid.grid_options_builder import GridOptionsBuilder
+from st_aggrid.shared import GridUpdateMode
 
 
 
@@ -157,27 +162,6 @@ class DataList():
 
         # 相性閾値の初期値設定用リスト(起動直後のみ、それ以降は使用しない。)
         self.lis_threshs = [0, 0, 34, 32, 75, 75, 75, 75]
-
-
-
-# ラジオボタンの選択肢1
-class RadioChoiceTable1(Enum):
-  def __str__(cls):
-    return cls.name
-
-  min_m式 = 0
-  min_m十s式 = 1
-
-
-
-# ラジオボタンの選択肢2
-class RadioChoiceTable2(Enum):
-  def __str__(cls):
-    return cls.name
-
-  純血統十レア = 0
-  全モンスター = 1
-  全モンスター_純血統のみ除く = 2
 
 
 
@@ -454,16 +438,16 @@ def create_combo_list(datalist):
 def radio_set_c_cmb_th(datalist, is_reset=False):
 
     # 前回値から変更があったかの確認
-    if st.session_state.radio_c.value != st.session_state.radio_c_prev.value or is_reset:
+    if int(st.session_state.radio_c[0]) != int(st.session_state.radio_c_prev[0]) or is_reset:
 
         # 前回値に今回設定値を保存
         st.session_state.radio_c_prev = st.session_state.radio_c
 
         # テーブルの設定
-        if st.session_state.radio_c.value == 0:
+        if int(st.session_state.radio_c[0]) == 0:
             st.session_state.select_options[0][0] = datalist.lis_mons_names_org
             datalist.df_monsters_c = datalist.df_monsters_org
-        elif st.session_state.radio_c.value == 1:
+        elif int(st.session_state.radio_c[0]) == 1:
             st.session_state.select_options[0][0] = datalist.lis_mons_names
             datalist.df_monsters_c = datalist.df_monsters
         else:
@@ -471,7 +455,7 @@ def radio_set_c_cmb_th(datalist, is_reset=False):
             datalist.df_monsters_c = datalist.df_monsters_ex_org
         
         # 閾値の再設定
-        entry_set_th(st.session_state.radio_calc.value)
+        entry_set_th(int(st.session_state.radio_calc[0]))
 
     return
 
@@ -481,17 +465,17 @@ def radio_set_c_cmb_th(datalist, is_reset=False):
 def radio_set_pg_cmb_th(datalist, is_reset=False):
 
     # 前回値から変更があったかの確認
-    if st.session_state.radio_pg.value != st.session_state.radio_pg_prev.value or is_reset:
+    if int(st.session_state.radio_pg[0]) != int(st.session_state.radio_pg_prev[0]) or is_reset:
 
         # 前回値に今回設定値を保存
         st.session_state.radio_pg_prev = st.session_state.radio_pg
 
         # テーブルの設定
-        if st.session_state.radio_pg.value == 0:
+        if int(st.session_state.radio_pg[0]) == 0:
             for i in range(datalist.num_monster-1):
                 st.session_state.select_options[0][i+1] = datalist.lis_mons_names_org
             datalist.df_monsters_pg = datalist.df_monsters_org
-        elif st.session_state.radio_pg.value == 1:
+        elif int(st.session_state.radio_pg[0]) == 1:
             for i in range(datalist.num_monster-1):
                 st.session_state.select_options[0][i+1] = datalist.lis_mons_names
             datalist.df_monsters_pg = datalist.df_monsters
@@ -501,7 +485,7 @@ def radio_set_pg_cmb_th(datalist, is_reset=False):
             datalist.df_monsters_pg = datalist.df_monsters_ex_org
         
         # 閾値の再設定
-        entry_set_th(st.session_state.radio_calc.value)
+        entry_set_th(int(st.session_state.radio_calc[0]))
 
     return
 
@@ -528,8 +512,8 @@ def entry_set_th1():
             st.session_state.input_threshs_disabled[i] = True
 
     # ラジオボタンの設定値取得、一部先行設定
-    c_num = st.session_state.radio_c.value
-    pg_num = st.session_state.radio_pg.value
+    c_num = int(st.session_state.radio_c[0])
+    pg_num = int(st.session_state.radio_pg[0])
 
     # ラジオボタンの内容に合わせてテキストボックスの内容を設定
     # 論理設計するともう少し最適化できそうだけど、いったんこれで。
@@ -613,7 +597,8 @@ def entry_set_th2():
 
 
 # モンスター名のセレクトボックス設定後、設定値に応じて相性閾値を変更する。
-def entry_set_th_from_cmb(flag, datalist):
+def entry_set_th_from_cmb(datalist):
+    flag = int(st.session_state.radio_calc[0])
     if flag == 0:
         entry_set_th_from_cmb1()
     elif flag == 1:
@@ -721,6 +706,7 @@ def entry_set_th_from_cmb2(datalist):
 def select_set_ops(datalist, who):
 
     # 設定値の保存
+    name_mons = st.session_state[f"select_ops_name{who}"]
     name_main = st.session_state[f"select_ops_main{who}"]
     name_sub = st.session_state[f"select_ops_sub{who}"]
 
@@ -764,6 +750,11 @@ def select_set_ops(datalist, who):
     st.session_state[f"select_ops_name{who}"] = ""
     st.session_state[f"select_ops_main{who}"] = name_main
     st.session_state[f"select_ops_sub{who}"]  = name_sub
+
+    # 閾値再設定
+    if name_mons != "":
+        entry_set_th_from_cmb(datalist)
+        pass
 
     return
 
@@ -850,16 +841,16 @@ def button_calc_affinity(datalist):
 def set_using_table(datalist):
 
     # オプション確認
-    if datalist.lis_choice_table[0].value == 0:
+    if datalist.lis_choice_table[0] == 0:
         lis_mons_league_tb_c = datalist.lis_mons_league_tb_org
-    elif datalist.lis_choice_table[0].value == 1:
+    elif datalist.lis_choice_table[0] == 1:
         lis_mons_league_tb_c = datalist.lis_mons_league_tb_all
     else:
         lis_mons_league_tb_c = datalist.lis_mons_league_tb_all_org
         
-    if datalist.lis_choice_table[1].value == 0:
+    if datalist.lis_choice_table[1] == 0:
         lis_mons_league_tb_pg = datalist.lis_mons_league_tb_org
-    elif datalist.lis_choice_table[1].value == 1:
+    elif datalist.lis_choice_table[1] == 1:
         lis_mons_league_tb_pg = datalist.lis_mons_league_tb_all
     else:
         lis_mons_league_tb_pg = datalist.lis_mons_league_tb_all_org
@@ -1293,19 +1284,27 @@ def calc_affinity_m_s(Monster_info, thresh_aff, datalist):
 # セッション系の初期化
 def init_session_state(datalist):
 
-    # ラジオボタンの選択結果保存領域作成
-    if "radio_calc" not in st.session_state:
-        st.session_state.radio_calc = RadioChoiceTable1.min_m十s式
+    ### ラジオボタンの選択結果保存領域作成
 
-    # ラジオボタンの選択結果保存領域作成
+    # 計算式設定
+    if "radio_calc_list" not in st.session_state:
+        st.session_state.radio_calc_list = ["0.min(m)式", "1.min(m+s)式"]
+    
+    if "radio_calc" not in st.session_state:
+        st.session_state.radio_calc = st.session_state.radio_calc_list[1]
+
+    # 参照テーブル設定
+    if "radio_table_list" not in st.session_state:
+        st.session_state.radio_table_list = ["0.純血統+レア", "1.全モンスター", "2.全モンスター(純血統のみ除く)"]
+
     if "radio_c" not in st.session_state:
-        st.session_state.radio_c = RadioChoiceTable2.全モンスター
+        st.session_state.radio_c = st.session_state.radio_table_list[1]
     if "radio_pg" not in st.session_state:
-        st.session_state.radio_pg = RadioChoiceTable2.全モンスター
+        st.session_state.radio_pg = st.session_state.radio_table_list[1]
     if "radio_c_prev" not in st.session_state:
-        st.session_state.radio_c_prev = RadioChoiceTable2.全モンスター
+        st.session_state.radio_c_prev = st.session_state.radio_table_list[1]
     if "radio_pg_prev" not in st.session_state:
-        st.session_state.radio_pg_prev = RadioChoiceTable2.全モンスター
+        st.session_state.radio_pg_prev = st.session_state.radio_table_list[1]
 
     # セレクトボックス選択結果保存域作成
     for i in range(datalist.num_monster):
@@ -1332,7 +1331,7 @@ def init_session_state(datalist):
     for i in range(8):
         if f"input_thresh{i}" not in st.session_state:
             st.session_state[f"input_thresh{i}"] = 0
-            entry_set_th(st.session_state.radio_calc.value)
+            entry_set_th(int(st.session_state.radio_calc[0]))
     
     # 結果領域の初期化
     if f"df_affinities" not in st.session_state:
@@ -1350,11 +1349,15 @@ def init_session_state(datalist):
 def create_radio_button(datalist):
     
     # テーブル選択結果格納場所の初期化
-    datalist.lis_choice_table = [st.session_state.radio_c.value, st.session_state.radio_pg.value]
+    datalist.lis_choice_table = [int(st.session_state.radio_c[0]), int(st.session_state.radio_pg[0])]
     
     # ラジオボタン作成
-    datalist.lis_choice_table[0] = st.radio("子",      RadioChoiceTable2, horizontal=True, key="radio_c", on_change=radio_set_c_cmb_th, args=(datalist, ), help="検索時に使用する子のモンスター名テーブルを設定します。")
-    datalist.lis_choice_table[1] = st.radio("親祖父母", RadioChoiceTable2, horizontal=True, key="radio_pg", on_change=radio_set_pg_cmb_th, args=(datalist, ), help="検索時に使用する親祖父母のモンスター名テーブルを設定します。")
+    c  = st.radio("子",      st.session_state.radio_table_list, horizontal=True, key="radio_c", on_change=radio_set_c_cmb_th, args=(datalist, ), help="検索時に使用する子のモンスター名テーブルを設定します。")
+    pg = st.radio("親祖父母", st.session_state.radio_table_list, horizontal=True, key="radio_pg", on_change=radio_set_pg_cmb_th, args=(datalist, ), help="検索時に使用する親祖父母のモンスター名テーブルを設定します。")
+
+    # 値設定
+    datalist.lis_choice_table[0] = int(c[0])
+    datalist.lis_choice_table[1] = int(pg[0])
 
     return
 
@@ -1369,7 +1372,7 @@ def create_select_box(datalist):
     for i in range(datalist.num_monster):
         col1, col2, col3 = st.columns(datalist.num_kind)
         with col1:
-            datalist.lis_names[0][i] = st.selectbox(lis_s_ops_labels[i], st.session_state.select_options[0][i], index = 0, key=f'select_ops_name{i}', on_change=entry_set_th_from_cmb, args=(st.session_state.radio_calc.value, datalist), help="相性を検索したいモンスター名を設定します。空欄の場合、全モンスターを候補とします。")
+            datalist.lis_names[0][i] = st.selectbox(lis_s_ops_labels[i], st.session_state.select_options[0][i], index = 0, key=f'select_ops_name{i}', on_change=entry_set_th_from_cmb, args=(datalist, ), help="相性を検索したいモンスター名を設定します。空欄の場合、全モンスターを候補とします。")
             # datalist.lis_names[0][i] = st.selectbox(lis_s_ops_labels[i], st.session_state.select_options[0][i], index = 0, key=f'select_ops_name{i}', help="相性を検索したいモンスター名を設定します。空欄の場合、全モンスターを候補とします。")
         with col2:
             datalist.lis_names[1][i] = st.selectbox('メイン血統',         st.session_state.select_options[1][i], index = 0, key=f'select_ops_main{i}', on_change=select_set_ops, args=(datalist, i), help="モンスターのメイン血統を設定します。(絞込み用のため、不要なら設定不要。)")
@@ -1446,8 +1449,8 @@ def set_log(Monster_info, lis_choice_table, thresh_aff):
 
     # 参照テーブル
     write_log(f"◎モンスター参照テーブル：")
-    write_log(f"　　　　　子：{message_list1[lis_choice_table[0].value]}")
-    write_log(f"　　親祖父母：{message_list1[lis_choice_table[1].value]}")
+    write_log(f"　　　　　子：{message_list1[lis_choice_table[0]]}")
+    write_log(f"　　親祖父母：{message_list1[lis_choice_table[1]]}")
 
     # 指定モンスター
     write_log(f"◎モンスター名：")
@@ -1476,7 +1479,58 @@ def set_log(Monster_info, lis_choice_table, thresh_aff):
 
 
 
+# 初期処理
+def init_datalist():
+
+    # 初期化処理を実行したかのフラグの初期化
+    if "is_init" not in st.session_state:
+        st.session_state.is_init = False
+    
+    # 保存領域の初期化
+    if "datalist" not in st.session_state:
+        st.session_state.datalist = DataList()
+    
+    # 初期処理
+    if not st.session_state.is_init:
+        # 処理未実施のため、処理を実施する。
+
+        # 初期処理フラグをON
+        st.session_state.is_init = True
+
+        #### 事前設定
+        # 参照ファイル名の設定(配下でインスタンス変数を作成しているため注意。)
+        ret, dic_file_names = set_input_filename()
+        if not ret:
+            return 
+
+        # 付属データの読み込み/リストへの変換(配下でインスタンス変数を作成しているため注意。)
+        datalist = read_all_data(dic_file_names)
+
+        # モンスター名リストに主血統ID/副血統IDを相性表を元に追加
+        ret = add_monster_id(datalist)
+        if not ret:
+            return 
+
+        # セレクトボックス向けレアモンのレコードを追加
+        add_raremon(datalist)
+
+        # 読み込んだデータからリーグ表作成(配下でインスタンス変数を作成しているため注意。)
+        create_league_table(datalist)
+
+        # セレクトボックス用の初期リストの作成(配下でインスタンス変数を作成しているため注意。)
+        create_combo_list(datalist)
+
+        # 保存領域に設定
+        st.session_state.datalist = datalist
+
+    return st.session_state.datalist
+
+
+
 def main():
+
+    # ページ設定
+    st.set_page_config(page_title="S Tool", layout="wide", initial_sidebar_state="expanded")
 
     # 見出しについてしまうリンクを削除
     st.html(
@@ -1505,35 +1559,21 @@ def main():
         """,
     )
 
-    st.title("Sツール")
-    st.write("Version 3.0.0a")
+    custom_html = """
+               <meta name=”viewport” content=”width=device-width,initial-scale=1″>
+                """
 
+    st.html(custom_html)
 
-    #### 事前設定
-    # 参照ファイル名の設定(配下でインスタンス変数を作成しているため注意。)
-    ret, dic_file_names = set_input_filename()
-    if not ret:
-        return 
-
-    # 付属データの読み込み/リストへの変換(配下でインスタンス変数を作成しているため注意。)
-    datalist = read_all_data(dic_file_names)
-
-    # モンスター名リストに主血統ID/副血統IDを相性表を元に追加
-    ret = add_monster_id(datalist)
-    if not ret:
-        return 
-
-    # セレクトボックス向けレアモンのレコードを追加
-    add_raremon(datalist)
-
-    # 読み込んだデータからリーグ表作成(配下でインスタンス変数を作成しているため注意。)
-    create_league_table(datalist)
-
-    # セレクトボックス用の初期リストの作成(配下でインスタンス変数を作成しているため注意。)
-    create_combo_list(datalist)
+    # データリストの初期化
+    datalist = init_datalist()
 
     # セッション初期化
     init_session_state(datalist)
+
+    # タイトル
+    st.title("S Tool")
+    st.write("Version 3.0.0")
 
 
     # ラジオボタン作成
@@ -1578,6 +1618,11 @@ def main():
     st.header('検索')
     if st.button('検索開始！'):
         with st.spinner('processiong...'):
+            # 現在のメモリ使用量をバイト単位で取得
+            used_memory = psutil.Process().memory_info().rss
+            # メモリ使用量をMBに変換して表示
+            st.write(f"現在のメモリ使用量: {used_memory / (1024 * 1024):.2f} MB")
+            # 検索
             ret = button_calc_affinity(datalist)
     
 
@@ -1586,7 +1631,18 @@ def main():
     st.header('検索結果', help="「検索開始！」ボタン押下後に設定値および結果が出力されます。")
     if st.session_state.is_search_once_more:
         print_log()
+                
         st.dataframe(st.session_state.df_affinities, width=2000, height=500, use_container_width=True)
+
+        # gb = GridOptionsBuilder.from_dataframe(st.session_state.df_affinities)
+        # gb.configure_selection(selection_mode="multiple", use_checkbox=True)
+        # gridOptions = gb.build()
+        # row = AgGrid(st.session_state.df_affinities, 
+        #       gridOptions=gridOptions, 
+        #       enable_enterprise_modules=True, 
+        #       allow_unsafe_jscode=True, 
+        #       update_mode=GridUpdateMode.SELECTION_CHANGED)
+
         # length = len(st.session_state.df_affinities.index) if len(st.session_state.df_affinities.index) < 10000 else 10000
         # st.dataframe(st.session_state.df_affinities.loc[0:length, :], width=2000, height=500)
     else:
