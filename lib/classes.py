@@ -22,6 +22,7 @@
 import pandas as pd
 
 
+
 # モンスターの情報を取り扱うクラス。
 class Monster():
     
@@ -118,8 +119,8 @@ class DataList():
     # 相性閾値設定欄
     num_threshs = 8
     # 検索候補最大数
-    N1 = 20000
-    N2 = 20000
+    N1 = 50000
+    N2 = 50000
     N3 = 1500000
     # 最大通知結果数、メモリ使用量
     max_result_num = 4999 # +1されるため注意

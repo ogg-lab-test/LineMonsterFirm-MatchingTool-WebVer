@@ -33,8 +33,24 @@ from lib.arrange_widget import init_page_setting
 
 def main():
 
-    # ページの初期設定
-    init_page_setting("S Tool", "リリースノート -作成中-", "")
+    init_page_setting("S Tool", "S Tool", "")
+    st.subheader("- リリースノート -")
+    """
+    &nbsp;
+    """
+
+    """
+    - **2024/05/02：Version 1.1.0**  
+      Windows版相性計算ツールをリリース。(現在公開停止中。)
+
+    - **2024/05/19：Version 2.0.1**  
+      Windows版相性計算ツールの不具合等を修正。(ダウンロードは[こちら](https://github.com/sean-sheep1/LineMonsterFirm-MatchingTool-LocalVer ""))  
+      ただし、更新停止中。
+    
+    - **2024/06/02：Version 3.0.0**  
+      Windows版相性計算ツールをWebアプリ化。  
+      ☆キジン種については未対応のため注意。
+    """
 
 
 

@@ -334,6 +334,12 @@ def select_set_ops(datalist, who):
     # サブ血統を考慮して、モンスター名から不要レコードを削除
     if st.session_state[f"select_ops_sub{who}"] != "":
         df = df[df["副血統"] == st.session_state[f"select_ops_sub{who}"]]
+    
+    # 主血統除いた場合のテーブルを使用したときの処理（純血統除外）
+    if who == 0 and int(st.session_state.radio_c[0]) == DataList.choice_table_ex_org:
+        df = df[df["主血統"] != df["副血統"]]
+    if who !=0 and int(st.session_state.radio_pg[0]) == DataList.choice_table_ex_org:
+        df = df[df["主血統"] != df["副血統"]]
 
     # それぞれリストに変換して、必要に応じて重複を削除し、先頭に空白を設定。
     # モンスター名
@@ -366,6 +372,51 @@ def select_set_ops(datalist, who):
     if name_mons != "":
         entry_set_th_from_cmb(datalist)
         pass
+
+    return
+
+
+
+# セレクトボックスの初期化
+def reset_select_box(datalist, is_reset=True, is_child=True, is_parent=True):
+    
+    # モンスター名のコンボボックス参照リストの初期化
+    if is_child:
+        radio_set_c_cmb_th(datalist, is_reset)
+
+    if is_parent:
+        radio_set_pg_cmb_th(datalist, is_reset)
+    
+    # for文の範囲決定
+    start = 0
+    end   = 0
+    if is_child and is_parent:
+        # 全初期化
+        start = 0
+        end   = DataList.num_monster
+    elif is_child:
+        # 子のみ初期化
+        start = 0
+        end   = 1
+    elif is_parent:
+        # 親系列のみ初期化
+        start = 1
+        end   = DataList.num_monster
+
+    # コンボボックスの内容とか初期化
+    for i in range(start, end):
+        st.session_state.session_datalist.lis_names[0][i] = ""
+        st.session_state.session_datalist.lis_names[1][i] = ""
+        st.session_state.session_datalist.lis_names[2][i] = ""
+        st.session_state[f"select_ops_name{i}"] = ""
+        st.session_state[f"select_ops_main{i}"] = ""
+        st.session_state[f"select_ops_sub{i}"] = ""
+        st.session_state.select_options[1][i] = datalist.lis_main_ped
+        st.session_state.select_options[2][i] = datalist.lis_sub_ped
+    
+    # ラジオボタンの変更から起動した場合、閾値再設定(^はxorの意味)
+    if is_child ^ is_parent:
+        entry_set_th_from_cmb(datalist)
 
     return
 

@@ -95,12 +95,12 @@ def set_log(Monster_info, thresh_aff):
 
     # 閾値
     write_log(f"◎相性値閾値：")
-    write_log(f"　　a.子-親-祖父-祖母メイン血統の相性値閾値　　　　　　　　　　 ：{thresh_aff.th_ped1_cpg}")
-    write_log(f"　　b.子-親-祖父-祖母サブ血統の相性値閾値　　　　　　　　　　　 ：{thresh_aff.th_ped2_cpg}")
-    write_log(f"　　c.親①-親②メイン血統の相性値閾値　　　　　　　　　　　　　 ：{thresh_aff.th_ped1_pp}")
-    write_log(f"　　d.親①-親②サブ血統の相性値閾値　　　　　　　　　　　　　　 ：{thresh_aff.th_ped2_pp}")
-    write_log(f"　　e.子-親①間のメイン/サブ血統相性値合計閾値　　　　　　　　　：{thresh_aff.th_p1}")
-    write_log(f"　　f.子-親②間のメイン/サブ血統相性値合計閾値　　　　　　　　　：{thresh_aff.th_p2}")
+    write_log(f"　　a.子-親-祖父-祖母メイン血統の相性値閾値　　　　　　　　　  ：{thresh_aff.th_ped1_cpg}")
+    write_log(f"　　b.子-親-祖父-祖母サブ血統の相性値閾値　　　　　　　　　　  ：{thresh_aff.th_ped2_cpg}")
+    write_log(f"　　c.親①-親②メイン血統の相性値閾値　　　　　　　　　　　　 ：{thresh_aff.th_ped1_pp}")
+    write_log(f"　　d.親①-親②サブ血統の相性値閾値　　　　　　　　　　　　　 ：{thresh_aff.th_ped2_pp}")
+    write_log(f"　　e.子-親①間のメイン/サブ血統相性値合計閾値　　　　　　　　：{thresh_aff.th_p1}")
+    write_log(f"　　f.子-親②間のメイン/サブ血統相性値合計閾値　　　　　　　　 ：{thresh_aff.th_p2}")
     write_log(f"　　g.親①家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg1}")
     write_log(f"　　h.親②家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg2}")
 

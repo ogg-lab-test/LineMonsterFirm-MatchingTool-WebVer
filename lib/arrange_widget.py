@@ -34,10 +34,9 @@ import pandas as pd
 from lib.classes import DataList
 from lib.classes import SessionDataList
 from lib.process_event import entry_set_th
-from lib.process_event import radio_set_c_cmb_th
-from lib.process_event import radio_set_pg_cmb_th
 from lib.process_event import entry_set_th_from_cmb
 from lib.process_event import select_set_ops
+from lib.process_event import reset_select_box
 from lib.process_event import button_calc_affinity
 from lib.process_log import print_log
 
@@ -149,7 +148,9 @@ def init_session_state(datalist):
     for i in range(DataList.num_threshs):
         if f"input_thresh{i}" not in st.session_state:
             st.session_state[f"input_thresh{i}"] = 0
-            entry_set_th()
+    if f"input_thresh" not in st.session_state:
+       st.session_state.input_thresh = True
+       entry_set_th()
 
     # 1回以上検索しているかどうかのフラグ
     if f"is_search_once_more" not in st.session_state:
@@ -164,14 +165,14 @@ def create_radio_button(datalist):
 
     # 表示
     st.write('')
-    st.header('モンスター参照テーブル', help="子/親祖父母毎に検索で使用するテーブルを設定します。")
+    st.header('モンスター参照テーブル', help="子/親祖父母毎に検索で使用するテーブルを設定します。変更時、関連するモンスター名設定をクリアし、閾値を再設定します。")
     
     # テーブル選択結果格納場所の初期化
     st.session_state.session_datalist.lis_choice_table = [int(st.session_state.radio_c[0]), int(st.session_state.radio_pg[0])]
     
     # ラジオボタン作成
-    c  = st.radio("子",      st.session_state.radio_table_list, horizontal=True, key="radio_c", on_change=radio_set_c_cmb_th, args=(datalist, ), help="検索時に使用する子のモンスター名テーブルを設定します。")
-    pg = st.radio("親祖父母", st.session_state.radio_table_list, horizontal=True, key="radio_pg", on_change=radio_set_pg_cmb_th, args=(datalist, ), help="検索時に使用する親祖父母のモンスター名テーブルを設定します。")
+    c  = st.radio("子",      st.session_state.radio_table_list, horizontal=True, key="radio_c", on_change=reset_select_box, args=(datalist, False, True, False, ), help="検索時に使用する子のモンスター名テーブルを設定します。設定内容に合わせて閾値を自動調整します。")
+    pg = st.radio("親祖父母", st.session_state.radio_table_list, horizontal=True, key="radio_pg", on_change=reset_select_box, args=(datalist, False, False, True, ), help="検索時に使用する親祖父母のモンスター名テーブルを設定します。設定内容に合わせて閾値を自動調整します。")
 
     # 値設定
     st.session_state.session_datalist.lis_choice_table[0] = int(c[0])
@@ -186,10 +187,10 @@ def create_select_area(datalist):
 
     # 表示
     st.write('')
-    st.header('モンスター名設定', help="ここで検索したいモンスターの設定をします。全て空白でも検索可能ですが、相性値閾値設定次第で候補過多で出力されなくなるため注意。(メイン/サブ血統欄はモンスター名絞込み用の設定です。")
+    st.header('モンスター名設定', help="ここで検索したいモンスターの設定をします。全て空白でも検索可能ですが、相性値閾値設定次第で候補過多で出力されなくなるため注意。(メイン/サブ血統欄はモンスター名絞込み用の設定です。）")
     
     # リセットボタンの作成(押下でリセット＆セレクトボックス作成、)
-    if st.button('モンスター名選択リセット', help="選択済みのセレクトボックスの内容を初期化します。"):
+    if st.button('モンスター名選択リセット', help="選択済みのセレクトボックスの内容と閾値を初期化します。"):
         reset_select_box(datalist)
     
     # セレクトボックスの作成
@@ -217,28 +218,6 @@ def create_select_box(datalist):
 
 
 
-# セレクトボックスの初期化
-def reset_select_box(datalist):
-
-    # モンスター名のコンボボックス参照リストの初期化
-    radio_set_c_cmb_th(datalist, True)
-    radio_set_pg_cmb_th(datalist, True)
-
-    # コンボボックスの内容とか初期化
-    for i in range(DataList.num_monster):
-        st.session_state.session_datalist.lis_names[0][i] = ""
-        st.session_state.session_datalist.lis_names[1][i] = ""
-        st.session_state.session_datalist.lis_names[2][i] = ""
-        st.session_state[f"select_ops_name{i}"] = ""
-        st.session_state[f"select_ops_main{i}"] = ""
-        st.session_state[f"select_ops_sub{i}"] = ""
-        st.session_state.select_options[1][i] = datalist.lis_main_ped
-        st.session_state.select_options[2][i] = datalist.lis_sub_ped
-
-    return
-
-
-
 # 詳細設定欄の作成
 def create_details(datalist):
 
@@ -253,6 +232,11 @@ def create_details(datalist):
         # 入力エリアの作成
         create_number_input(datalist)
     
+    else:
+        # 初期閾値を更新しておく
+        for i in range(DataList.num_threshs):
+            datalist.lis_threshs[i] = st.session_state[f"input_thresh{i}"]
+        
     return
 
 
@@ -278,7 +262,7 @@ def create_number_input(datalist):
     st.write('')
     st.subheader('相性値閾値設定', help="本項目での設定値未満の相性値の場合、検索候補から除外します。（よくわからない場合はそのままで問題なし。）")
 
-    # 初期化した閾値を使用して数値入力エリアを作成
+    # ラベルを作成
     label_names = ["a.子-親-祖父-祖母メイン血統の相性値閾値", "b.子-親-祖父-祖母サブ血統の相性値閾値", 
                     "c.親①-親②メイン血統の相性値閾値", "d.親①-親②サブ血統の相性値閾値", 
                     "e.子-親①間のメイン/サブ血統相性値合計閾値", "f.子-親②間のメイン/サブ血統相性値合計閾値",
