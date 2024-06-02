@@ -1,5 +1,5 @@
 """
-   Copyright 2024/5/18 sean of copyright owner
+   Copyright 2024/6/2 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -18,46 +18,23 @@
 	(改変時は面倒ではありますが変更履歴/内容も記載してください。)
 
 """
+
+# streamlit関連
 import streamlit as st
 
-import pandas as pd
+# 外部ライブラリ
+# import psutil
+# from memory_profiler import profile
 
-import datetime
-import os
-import time
+# 自作ライブラリ等
+from lib.arrange_widget import init_page_setting
 
 
 
 def main():
 
-    # 見出しについてしまうリンクを削除
-    st.html(
-        body="""
-            <style>
-                /* hide hyperlink anchors generated next to headers */
-                h1 > div > a {
-                    display: none !important;
-                }
-                h2 > div > a {
-                    display: none !important;
-                }
-                h3 > div > a {
-                    display: none !important;
-                }
-                h4 > div > a {
-                    display: none !important;
-                }
-                h5 > div > a {
-                    display: none !important;
-                }
-                h6 > div > a {
-                    display: none !important;
-                }
-            </style>
-        """,
-    )
-    
-    st.title("マニュアル -作成中-")
+    # ページの初期設定
+    init_page_setting("S Tool", "マニュアル -作成中-", "")
 
 
 
