@@ -193,6 +193,10 @@ class SessionDataList():
         self.lis_mons_league_tb_c       = [[]]
         self.lis_mons_league_tb_pg      = [[]]
 
+        # 補足ページに出力する用のデータ
+        self.df_affinities_m_cp = pd.DataFrame()
+        self.df_affinities_s_cp = pd.DataFrame()
+
         # ラジオボタン選択結果(テーブル情報)保存用格納域
         self.lis_choice_table = [0] * DataList.num_choice_table_result
 

@@ -102,6 +102,9 @@ def init_session_state(datalist):
         # セレクトボックスの絞込み用のDataFrame型を用意。
         st.session_state.session_datalist.df_monsters_c = datalist.df_monsters
         st.session_state.session_datalist.df_monsters_pg = datalist.df_monsters
+        # 補足ページに出力するための
+        st.session_state.session_datalist.df_affinities_m_cp = datalist.df_affinities_m_cp
+        st.session_state.session_datalist.df_affinities_s_cp = datalist.df_affinities_s_cp
 
     ### ラジオボタンの選択結果保存領域作成(★ラジオボタンの選択結果は先頭1文字を使用して判別しているため注意。)
     # 参照テーブル設定
@@ -344,7 +347,7 @@ def create_check_box():
 def create_thresh_disable_check_box(datalist):
     
     # チェックボックス作成
-    st.write("相性閾値自動設定")
+    st.write("相性値閾値自動設定")
     flag = not st.session_state.check_ptn_disabled
     st.checkbox("無効化", value=False, key="input_threshs_chg_disabled", disabled=flag, on_change=entry_set_th_from_cmb, args=(datalist, ), help="★★注意：無効化すると適切に検索できない場合があります。")
 

@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/2 sean of copyright owner
+   Copyright 2024/6/16 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ def main():
      4. **ベストマッチの組合せが出ない可能性がある件について**  
         上記全数検索を実施すると、候補数が途方もない数となり計算数/メモリが不足してしまうため、相性値の閾値を設定しています。  
         そのため、本相性値の閾値設定によっては、全体の相性値としてベストな組合せが候補に挙がらない場合があります。  
-        どうしてもベストな組み合わせを調査したい場合は、可能な範囲で子～祖母②の情報を入力して、  
+        どうしてもベストな組み合わせを調査したい場合は、可能な範囲でモンスターの情報を入力して、  
         極力候補数を絞ったうえで相性値閾値の設定を実施してください。  
         なお、相性値の閾値を小さくするほど、候補数が増大するため、  
         計算時間がたくさん必要になりますのでご注意ください。

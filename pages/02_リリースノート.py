@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/2 sean of copyright owner
+   Copyright 2024/6/16 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -51,10 +51,14 @@ def main():
       Windows版相性計算ツールをWebアプリ化。  
       (★注意)キジン種については未対応。
 
-    - **2024/06/15：Version 3.1.0**  
+    - **2024/06/16：Version 3.1.0**  
       * 各ページの誤記を修正  
-      * オーディーン追加
-      * aaa
+      * オーディーン追加  
+      * ABB-BAA等のパターン検索に対応（詳細は補足ページを参照。）  
+      * パターン検索時限定で、子の血統指定検索に対応（詳細はヘルプページを参照。）  
+      * 全パターン検索時の閾値地頭修正機能無効化機能ボタンの追加  
+      * "補足ページ"に、秘伝と相性に関連する基本的な記載を追加  
+      （初心者の方はこちらを一読することで理解が深まると思われます。）
 
     """
 
