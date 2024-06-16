@@ -27,6 +27,7 @@ import streamlit as st
 # from memory_profiler import profile
 
 # 自作ライブラリ等
+from lib.classes import DataList
 # from lib.classes import Monster
 # from lib.classes import ThreshAff
 # from lib.classes import SessionDataList
@@ -90,19 +91,37 @@ def set_log(Monster_info, thresh_aff):
     #     write_log(f"{message_list2[i]:>{size1}}:{monster.name:>{size2}}, メイン：{monster.pedigree1:>{size3}}, サブ：{monster.pedigree2:>{size4}}")
 
     # 計算式
-    write_log(f"◎相性値閾値：")
+    write_log(f"◎計算式：")
     write_log(f"　　計算式：{st.session_state.radio_calc}")
+
+    # 出力パターン
+    write_log(f"◎出力パターン：")
+    write_log(f"　　パターン方式：{st.session_state.radio_ptn}")
+    message = ""
+    if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
+        message += "Z-ABB×BAA, " if st.session_state.check_ptn0 else ""
+        message += "Z-ABB×BCC, " if st.session_state.check_ptn1 else ""
+        message += "Z-ACC×BCC, " if st.session_state.check_ptn2 else ""
+        message += "Z-ABC×BCA, " if st.session_state.check_ptn3 else ""
+        if len(message) == 0:
+            message = "パターン選択無（何も出力されないため注意。）"
+    else:
+        message = "無効"
+    write_log(f"　　パターン選択：{message}")
 
     # 閾値
     write_log(f"◎相性値閾値：")
-    write_log(f"　　a.子-親-祖父-祖母メイン血統の相性値閾値　　　　　　　　　  ：{thresh_aff.th_ped1_cpg}")
-    write_log(f"　　b.子-親-祖父-祖母サブ血統の相性値閾値　　　　　　　　　　  ：{thresh_aff.th_ped2_cpg}")
-    write_log(f"　　c.親①-親②メイン血統の相性値閾値　　　　　　　　　　　　 ：{thresh_aff.th_ped1_pp}")
-    write_log(f"　　d.親①-親②サブ血統の相性値閾値　　　　　　　　　　　　　 ：{thresh_aff.th_ped2_pp}")
-    write_log(f"　　e.子-親①間のメイン/サブ血統相性値合計閾値　　　　　　　　：{thresh_aff.th_p1}")
-    write_log(f"　　f.子-親②間のメイン/サブ血統相性値合計閾値　　　　　　　　 ：{thresh_aff.th_p2}")
-    write_log(f"　　g.親①家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg1}")
-    write_log(f"　　h.親②家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg2}")
+    if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
+        write_log(f"　　★★パターン方式に「2.特定パターン」を選択している場合は閾値自動設定のみ有効。")
+    else:
+        write_log(f"　　a.子-親-祖父-祖母メイン血統の相性値閾値　　　　　　　　　  ：{thresh_aff.th_ped1_cpg}")
+        write_log(f"　　b.子-親-祖父-祖母サブ血統の相性値閾値　　　　　　　　　　  ：{thresh_aff.th_ped2_cpg}")
+        write_log(f"　　c.親①-親②メイン血統の相性値閾値　　　　　　　　　　　　 ：{thresh_aff.th_ped1_pp}")
+        write_log(f"　　d.親①-親②サブ血統の相性値閾値　　　　　　　　　　　　　 ：{thresh_aff.th_ped2_pp}")
+        write_log(f"　　e.子-親①間のメイン/サブ血統相性値合計閾値　　　　　　　　：{thresh_aff.th_p1}")
+        write_log(f"　　f.子-親②間のメイン/サブ血統相性値合計閾値　　　　　　　　 ：{thresh_aff.th_p2}")
+        write_log(f"　　g.親①家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg1}")
+        write_log(f"　　h.親②家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg2}")
 
     return
 
@@ -111,7 +130,7 @@ def set_log(Monster_info, thresh_aff):
 # ログ領域のWeb上への表示
 def print_log():
     
-    txt = st.text_area("ログ情報", st.session_state.log, height=650, disabled=True, help="設定情報や検索時の途中経過について出力されます。")
+    txt = st.text_area("ログ情報", st.session_state.log, height=700, disabled=True, help="設定情報や検索時の途中経過について出力されます。")
 
     return
 

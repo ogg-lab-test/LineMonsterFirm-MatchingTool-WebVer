@@ -115,11 +115,16 @@ def entry_set_th():
 def entry_set_th1():
 
     # 入力域の無効化
-    for i in range(DataList.num_threshs):
-        if i < 4:
-            st.session_state.input_threshs_disabled[i] = False
-        else:
-            st.session_state.input_threshs_disabled[i] = True
+    if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:
+        for i in range(DataList.num_threshs):
+            if i < 4:
+                st.session_state.input_threshs_disabled[i] = False
+            else:
+                st.session_state.input_threshs_disabled[i] = True
+
+    # 閾値自動変更無効化チェック
+    if st.session_state.input_threshs_chg_disabled:
+        return
 
     # ラジオボタンの設定値取得、一部先行設定
     c_num = int(st.session_state.radio_c[0])
@@ -186,11 +191,16 @@ def entry_set_th1():
 def entry_set_th2():
 
     # 入力域の無効化
-    for i in range(DataList.num_threshs):
-        if i < 2:
-            st.session_state.input_threshs_disabled[i] = True
-        else:
-            st.session_state.input_threshs_disabled[i] = False
+    if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:
+        for i in range(DataList.num_threshs):
+            if i < 2:
+                st.session_state.input_threshs_disabled[i] = True
+            else:
+                st.session_state.input_threshs_disabled[i] = False
+
+    # 閾値自動変更無効化チェック
+    if st.session_state.input_threshs_chg_disabled:
+        return
 
     # 初期値設定
     st.session_state[f"input_thresh0"] = 0
@@ -206,14 +216,55 @@ def entry_set_th2():
 
 
 
+# 出力パターンによって、特定の入力域を無効化する。
+def radio_disable_entry_cmb(datalist):
+
+    if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:
+
+        # セレクトボックスの有効化
+        st.session_state.select_ops_disabled[3] = False
+        st.session_state.select_ops_disabled[5] = False
+        st.session_state.select_ops_disabled[6] = False       
+
+        # パターンのチェックボックス無効化
+        st.session_state.check_ptn_disabled = True
+
+        # 入力域を計算式に合わせて元に戻す
+        entry_set_th_from_cmb(datalist)
+
+    elif int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
+
+        # セレクトボックスの一部無効化
+        st.session_state.select_ops_disabled[3] = True
+        st.session_state.select_ops_disabled[5] = True
+        st.session_state.select_ops_disabled[6] = True
+
+        # パターンのチェックボックス有効化
+        st.session_state.check_ptn_disabled = False
+
+        # 入力域の無効化
+        for i in range(DataList.num_threshs):
+            st.session_state.input_threshs_disabled[i] = True
+
+    return
+
+
+
 # モンスター名のセレクトボックス設定後、設定値に応じて相性閾値を変更する。
 def entry_set_th_from_cmb(datalist):
+    
+    # 閾値自動変更無効化チェック
+    if st.session_state.input_threshs_chg_disabled:
+        return
+    
     flag = int(st.session_state.radio_calc[0])
     if flag == DataList.choice_exp1:
         entry_set_th_from_cmb1()
     elif flag == DataList.choice_exp2:
         entry_set_th_from_cmb2(datalist)
+    
     return
+
 
 
 # モンスター名のセレクトボックス設定後、設定値に応じて相性閾値を変更する。
@@ -440,7 +491,10 @@ def button_calc_affinity(datalist):
     ### 設定画面で設定した内容を各変数に再格納。
 
     # モンスター名の設定
-    child   = Monster(st.session_state.session_datalist.lis_names[0][0])
+    if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:  
+        child = Monster(st.session_state.session_datalist.lis_names[0][0])
+    elif int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
+        child   = Monster(st.session_state.session_datalist.lis_names[0][0], st.session_state.session_datalist.lis_names[1][0], st.session_state.session_datalist.lis_names[2][0])
     parent1 = Monster(st.session_state.session_datalist.lis_names[0][1])
     granpa1 = Monster(st.session_state.session_datalist.lis_names[0][2])
     granma1 = Monster(st.session_state.session_datalist.lis_names[0][3])

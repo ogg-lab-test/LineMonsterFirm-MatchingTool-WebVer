@@ -34,6 +34,7 @@ import pandas as pd
 from lib.classes import DataList
 from lib.classes import SessionDataList
 from lib.process_event import entry_set_th
+from lib.process_event import radio_disable_entry_cmb
 from lib.process_event import entry_set_th_from_cmb
 from lib.process_event import select_set_ops
 from lib.process_event import reset_select_box
@@ -103,13 +104,6 @@ def init_session_state(datalist):
         st.session_state.session_datalist.df_monsters_pg = datalist.df_monsters
 
     ### ラジオボタンの選択結果保存領域作成(★ラジオボタンの選択結果は先頭1文字を使用して判別しているため注意。)
-    # 計算式設定
-    if "radio_calc_list" not in st.session_state:
-        st.session_state.radio_calc_list = ["1.min(m)式", "2.min(m+s)式"]
-    
-    if "radio_calc" not in st.session_state:
-        st.session_state.radio_calc = st.session_state.radio_calc_list[1]
-
     # 参照テーブル設定
     if "radio_table_list" not in st.session_state:
         st.session_state.radio_table_list = ["1.純血統+レア", "2.全モンスター", "3.全モンスター(純血統のみ除く)"]
@@ -122,6 +116,20 @@ def init_session_state(datalist):
         st.session_state.radio_c_prev = st.session_state.radio_table_list[1]
     if "radio_pg_prev" not in st.session_state:
         st.session_state.radio_pg_prev = st.session_state.radio_table_list[1]
+    
+    # 計算式設定
+    if "radio_calc_list" not in st.session_state:
+        st.session_state.radio_calc_list = ["1.min(m)式", "2.min(m+s)式"]
+    
+    if "radio_calc" not in st.session_state:
+        st.session_state.radio_calc = st.session_state.radio_calc_list[1]
+    
+    # 出力パターン設定
+    if "radio_ptn_list" not in st.session_state:
+        st.session_state.radio_ptn_list = ["1.全パターン", "2.特定パターン"]
+    
+    if "radio_ptn" not in st.session_state:
+        st.session_state.radio_ptn = st.session_state.radio_ptn_list[1]
 
     # セレクトボックス選択結果保存域作成
     for i in range(DataList.num_monster):
@@ -140,9 +148,29 @@ def init_session_state(datalist):
             st.session_state.select_options[1][i] = datalist.lis_main_ped
             st.session_state.select_options[2][i] = datalist.lis_sub_ped
 
+    # セレクトボックスの有効/無効化フラグ
+    if f"select_ops_disabled" not in st.session_state:
+        st.session_state.select_ops_disabled = [False] * DataList.num_monster
+        st.session_state.select_ops_disabled[3] = True
+        st.session_state.select_ops_disabled[5] = True
+        st.session_state.select_ops_disabled[6] = True 
+
+    # 出力パターンのチェックボックス設定内容保存場所
+    for i in range(DataList.num_check_ptn):
+        if f"check_ptn{i}" not in st.session_state:
+            st.session_state[f"check_ptn{i}"] = True
+    
+    # 出力パターンのチェックボックス有効無効化フラグ
+    if f"check_ptn_disabled" not in st.session_state:
+        st.session_state.check_ptn_disabled = False
+
+    # 閾値設定の自動切換えの有効/無効化フラグ
+    if f"input_threshs_chg_disabled" not in st.session_state:
+        st.session_state.input_threshs_chg_disabled = False
+
     # 閾値設定箇所の有効/無効化フラグ
     if f"input_threshs_disabled" not in st.session_state:
-        st.session_state.input_threshs_disabled = [False] * DataList.num_threshs
+        st.session_state.input_threshs_disabled = [True] * DataList.num_threshs
 
     # 閾値関連の領域初期化
     for i in range(DataList.num_threshs):
@@ -204,15 +232,27 @@ def create_select_box(datalist):
     # ラベルの初期化
     lis_s_ops_labels = ['子', '親①', '祖父①', '祖母①', '親②', '祖父②', '祖母②']
 
+    # メッセージ
+    lis_label1   = ['メイン血統(検索用)', 'メイン血統(絞込み用)']
+    lis_label2   = ['サブ血統(検索用)', 'サブ血統(絞込み用)']
+    lis_message1 = ["モンスターのメイン血統を設定します。設定した血統を元に検索を実行します。", 
+                   "モンスターのメイン血統を設定します。(絞込み用のため、不要なら設定不要。)"]
+    lis_message2 = ["モンスターのサブ血統を設定します。設定した血統を元に検索を実行します。", 
+                    "モンスターのサブ血統を設定します。(絞込み用のため、不要なら設定不要。)"]
+
     # セレクトボックス作成
     for i in range(DataList.num_monster):
         col1, col2, col3 = st.columns(DataList.num_kind)
+        if i == 0 and int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
+            choice = 0
+        else:
+            choice = 1
         with col1:
-            st.session_state.session_datalist.lis_names[0][i] = st.selectbox(lis_s_ops_labels[i], st.session_state.select_options[0][i], index = 0, key=f'select_ops_name{i}', on_change=entry_set_th_from_cmb, args=(datalist, ), help="相性を検索したいモンスター名を設定します。空欄の場合、全モンスターを候補とします。")
+            st.session_state.session_datalist.lis_names[0][i] = st.selectbox(lis_s_ops_labels[i], st.session_state.select_options[0][i], index = 0, key=f'select_ops_name{i}', on_change=entry_set_th_from_cmb, args=(datalist, ), disabled=st.session_state.select_ops_disabled[i], help="相性を検索したいモンスター名を設定します。空欄の場合、全モンスターを候補とします。")
         with col2:
-            st.session_state.session_datalist.lis_names[1][i] = st.selectbox('メイン血統',         st.session_state.select_options[1][i], index = 0, key=f'select_ops_main{i}', on_change=select_set_ops, args=(datalist, i), help="モンスターのメイン血統を設定します。(絞込み用のため、不要なら設定不要。)")
+            st.session_state.session_datalist.lis_names[1][i] = st.selectbox(lis_label1[choice],  st.session_state.select_options[1][i], index = 0, key=f'select_ops_main{i}', on_change=select_set_ops, args=(datalist, i), disabled=st.session_state.select_ops_disabled[i], help=lis_message1[choice])
         with col3:
-            st.session_state.session_datalist.lis_names[2][i] = st.selectbox('サブ血統',           st.session_state.select_options[2][i], index = 0, key=f'select_ops_sub{i}', on_change=select_set_ops, args=(datalist, i), help="モンスターのメイン血統を設定します。(絞込み用のため、不要なら設定不要。)")
+            st.session_state.session_datalist.lis_names[2][i] = st.selectbox(lis_label2[choice],  st.session_state.select_options[2][i], index = 0, key=f'select_ops_sub{i}', on_change=select_set_ops, args=(datalist, i), disabled=st.session_state.select_ops_disabled[i], help=lis_message2[choice])
     
     return
 
@@ -229,8 +269,17 @@ def create_details(datalist):
         # 計算式選択ボタンの作成
         create_radio_button_exp(datalist)
 
+        # 検索パターン指定ラジオボタン作成
+        create_radio_button_ptn(datalist)
+
+        # 検索パターンの絞込みチェックボックス
+        create_check_box()
+
         # 入力エリアの作成
         create_number_input(datalist)
+
+        # 閾値自動調整無効化
+        create_thresh_disable_check_box(datalist)
     
     else:
         # 初期閾値を更新しておく
@@ -255,6 +304,54 @@ def create_radio_button_exp(datalist):
 
 
 
+# 検索パターン指定ラジオボタン
+def create_radio_button_ptn(datalist):
+
+    # 表示
+    st.write('')
+    st.subheader('出力パターン', help="全パターンを選択すると、すべての組合せから検索します。特定パターンを選択すると、次のチェックボックスで選択されたパターンのみに絞って検索します。")
+
+    # ラジオボタン作成
+    choice  = st.radio("パターン方式",      st.session_state.radio_ptn_list, horizontal=True, key="radio_ptn", index=1, on_change=radio_disable_entry_cmb, args=(datalist, ), help="計算結果の出力パターンを指定します。出力パターンの詳細については補足ページをご確認ください。")
+
+    return
+
+
+
+# 検索パターン出力形式選択チェックボックス作成
+def create_check_box():
+    
+    # ラベルの初期化
+    lis_s_ops_labels = ['Z-ABB×BAA', 'Z-ABB×BCC', 'Z-ACC×BCC', 'Z-ABC×BCA']
+
+    # チェックボックス作成
+    st.write("パターン選択")
+    col1, col2, col3, col4 = st.columns(len(lis_s_ops_labels))
+    with col1:
+        st.checkbox(lis_s_ops_labels[0], value=True, key="check_ptn0", disabled=st.session_state.check_ptn_disabled, help="親と祖父母が入れ替わる形の形式を出力します。")
+    with col2:
+        st.checkbox(lis_s_ops_labels[1], value=True, key="check_ptn1", disabled=st.session_state.check_ptn_disabled, help="親①の祖父母に親②を使用し、親②の祖父母に別のモンスターを使用するパターンを出力します。")
+    with col3:
+        st.checkbox(lis_s_ops_labels[2], value=True, key="check_ptn2", disabled=st.session_state.check_ptn_disabled, help="親①、親②で同じ祖父母を使用するパターンを出力します。")
+    with col4:
+        st.checkbox(lis_s_ops_labels[3], value=True, key="check_ptn3", disabled=st.session_state.check_ptn_disabled, help="相性のいいモンスター3体について、親・祖父母の役割を入れ替えたパターンを出力します。")
+
+    return
+
+
+
+# 相性閾値自動変更無効化チェックボックス作成
+def create_thresh_disable_check_box(datalist):
+    
+    # チェックボックス作成
+    st.write("相性閾値自動設定")
+    flag = not st.session_state.check_ptn_disabled
+    st.checkbox("無効化", value=False, key="input_threshs_chg_disabled", disabled=flag, on_change=entry_set_th_from_cmb, args=(datalist, ), help="★★注意：無効化すると適切に検索できない場合があります。")
+
+    return
+
+
+
 # 閾値入力エリア作成
 def create_number_input(datalist):
 
@@ -268,7 +365,7 @@ def create_number_input(datalist):
                     "e.子-親①間のメイン/サブ血統相性値合計閾値", "f.子-親②間のメイン/サブ血統相性値合計閾値",
                     "g.親①家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値", 
                     "h.親②家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値"]
-    
+
     # テキスト入力エリアを設定
     for i in range(len(label_names)):
         st.number_input(label_names[i], min_value=0, value=datalist.lis_threshs[i], key=f"input_thresh{i}", disabled=st.session_state.input_threshs_disabled[i])

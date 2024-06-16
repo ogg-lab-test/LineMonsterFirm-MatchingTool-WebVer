@@ -39,7 +39,7 @@ from lib.arrange_widget import disp_result
 def main():
 
     # ページの初期設定
-    init_page_setting("S Tool", "S Tool", "Version 3.0.0")
+    init_page_setting("S Tool", "S Tool", "Version 3.1.0")
 
     # データリストの初期化
     datalist = init_datalist_for_all_client()
