@@ -670,7 +670,7 @@ def calc_affinity_m_ptn(Monster_info, datalist):
                                 if c_is_not_1:
                                     aff0 = ab_common + z_abb + z_baa 
                                     mark0 = get_mark(aff0)
-                                    lis_affinities.append([0, aff0, name_z, name_a, name_b, name_b, name_b, name_a, name_a] )
+                                    lis_affinities.append([mark0, aff0, name_z, name_a, name_b, name_b, name_b, name_a, name_a] )
 
                             for c_m in Monster_info[2].ped1_num:
                                 zacc_m = lis_affinities_m_cpg[z_m][a_m][c_m][c_m]

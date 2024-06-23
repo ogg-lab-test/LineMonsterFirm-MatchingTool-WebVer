@@ -313,7 +313,6 @@ def entry_set_th_from_cmb1(datalist):
 
     # 設定値の数値チェック/テキストボックスの設定
     for i in range(4):
-        print(i)
         if t_list[i] < st.session_state[f"input_thresh{i}"]:
             st.session_state[f"input_thresh{i}"] = t_list[i]
 

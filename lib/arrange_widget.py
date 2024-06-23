@@ -566,15 +566,15 @@ def set_AgGrid1(df_affinities, add_color_flag=False):
 
     gb = GridOptionsBuilder.from_dataframe(df_affinities)
     gb.configure_selection(selection_mode="multiple", use_checkbox=True)
-    cellsytle_jscode = create_jacode_aff()
+    cellsytle_jscode = create_jscode_aff()
     gb.configure_column("評価", cellStyle=cellsytle_jscode)
     if add_color_flag:
-        cellsytle_jscode_parent = create_jacode_parent()
+        cellsytle_jscode_parent = create_jscode_parent()
         gb.configure_column("親①②", cellStyle=cellsytle_jscode_parent)
-        cellsytle_jscode_either = create_jacode_either()
+        cellsytle_jscode_either = create_jscode_either()
         gb.configure_column("親祖父母①", cellStyle=cellsytle_jscode_either)
         gb.configure_column("親祖父母②", cellStyle=cellsytle_jscode_either)
-        cellsytle_jscode_both = create_jacode_both()
+        cellsytle_jscode_both = create_jscode_both()
         gb.configure_column("相性値", cellStyle=cellsytle_jscode_both)
         gb.configure_column("素相性値", cellStyle=cellsytle_jscode_both)
     # gb.configure_pagination()
@@ -622,7 +622,7 @@ def set_AgGrid2(datalist, data):
 
 
 # AgGridのオプションに使用するjscodeを作成して返却する。
-def create_jacode_aff():
+def create_jscode_aff():
 
     cellsytle_jscode = JsCode(
     """
@@ -652,7 +652,7 @@ def create_jacode_aff():
 
 
 # AgGridのオプションに使用するjscodeを作成して返却する。
-def create_jacode_parent():
+def create_jscode_parent():
 
     cellsytle_jscode = JsCode(
     """
@@ -682,7 +682,7 @@ def create_jacode_parent():
 
 
 # AgGridのオプションに使用するjscodeを作成して返却する。
-def create_jacode_either():
+def create_jscode_either():
 
     cellsytle_jscode = JsCode(
     """
@@ -712,7 +712,7 @@ def create_jacode_either():
 
 
 # AgGridのオプションに使用するjscodeを作成して返却する。
-def create_jacode_both():
+def create_jscode_both():
 
     cellsytle_jscode = JsCode(
     """
