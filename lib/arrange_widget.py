@@ -532,11 +532,11 @@ def disp_result(datalist, used_memory):
                 # st.dataframe(st.session_state.session_datalist.df_affinities, width=2000, height=500, use_container_width=True)
 
                 st.write('')
-                st.subheader(f"検索結果一覧")
+                st.subheader(f"検索結果一覧", help="結果一覧が表示されます。相性値列の背景色凡例は次の通りです。黄：☆、緑：◎、水色：〇")
                 data1 = set_AgGrid1(st.session_state.session_datalist.df_affinities)
                 
                 st.write('')
-                st.subheader(f"逆引き検索結果一覧", help="結果一覧から選択した1件を元に、親祖父母を固定して再検索します。")
+                st.subheader(f"逆引き検索結果一覧", help="結果一覧から選択した1件を元に、親祖父母を固定して再検索します。相性値列等の相性値に関係する列の背景色凡例は次の通りです。黄：☆、緑：◎、水色：〇")
                 data2 = set_AgGrid2(datalist, data1)
         
         # 設定値の表示
@@ -560,7 +560,7 @@ def set_AgGrid1(df_affinities, add_color_flag=False):
     cellsytle_jscode = create_jacode_aff()
     gb.configure_column("評価", cellStyle=cellsytle_jscode)
     if add_color_flag:
-        cellsytle_jscode_parent = create_jacode_either()
+        cellsytle_jscode_parent = create_jacode_parent()
         gb.configure_column("親①②", cellStyle=cellsytle_jscode_parent)
         cellsytle_jscode_either = create_jacode_either()
         gb.configure_column("親祖父母①", cellStyle=cellsytle_jscode_either)
@@ -597,11 +597,12 @@ def set_AgGrid2(datalist, data):
         st.dataframe(selected_rows.iloc[0:1, :], width=2000, height=40, use_container_width=True)
 
         # 1件目のレコードを使用して、相性値を計算して表示処理
-        st.write(f"◎逆引き検索結果一覧")
-        select_calc_affinity(datalist, selected_rows)
-        set_AgGrid1(st.session_state.session_datalist.df_affinities_slct, True)
-        # st.dataframe(st.session_state.session_datalist.df_affinities_slct, width=1000, height=400, use_container_width=True)
-        st.write(f"別の結果を検索する場合は、一度すべてのチェックを解除して、選択しなおしてください。")
+        with st.spinner('processiong...'):
+            st.write(f"◎逆引き検索結果一覧")
+            select_calc_affinity(datalist, selected_rows)
+            set_AgGrid1(st.session_state.session_datalist.df_affinities_slct, True)
+            # st.dataframe(st.session_state.session_datalist.df_affinities_slct, width=1000, height=400, use_container_width=True)
+            st.write(f"別の結果を検索する場合は、一度すべてのチェックを解除して、選択しなおしてください。")
     
     else:
     
@@ -630,11 +631,6 @@ def create_jacode_aff():
             return {
                 'color': 'black',
                 'backgroundColor': 'aqua'
-            }
-        } else {
-            return {
-                'color': 'black',
-                'backgroundColor': 'white'
             }
         }
     };
@@ -666,11 +662,6 @@ def create_jacode_parent():
                 'color': 'black',
                 'backgroundColor': 'aqua'
             }
-        } else {
-            return {
-                'color': 'black',
-                'backgroundColor': 'white'
-            }
         }
     };
     """
@@ -701,11 +692,6 @@ def create_jacode_either():
                 'color': 'black',
                 'backgroundColor': 'aqua'
             }
-        } else {
-            return {
-                'color': 'black',
-                'backgroundColor': 'white'
-            }
         }
     };
     """
@@ -735,11 +721,6 @@ def create_jacode_both():
             return {
                 'color': 'black',
                 'backgroundColor': 'aqua'
-            }
-        } else {
-            return {
-                'color': 'black',
-                'backgroundColor': 'white'
             }
         }
     };
