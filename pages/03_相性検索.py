@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/16 sean of copyright owner
+   Copyright 2024/6/23 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -67,16 +67,4 @@ def main():
 # 呼び出し
 if __name__ == '__main__':
     main()
-
-    #  参照データ設定
-    ## 所持モンスター設定
-    ## モンスター参照テーブル設定
-    
-    # 検索モンスター名設定
-    
-    #  検索オプション
-    ## 計算手法設定
-    ## 出力形式設定
-    ## 相性値閾値設定
-    ## 共通秘伝設定
 

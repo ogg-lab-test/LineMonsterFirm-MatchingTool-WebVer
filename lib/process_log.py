@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/2 sean of copyright owner
+   Copyright 2024/6/23 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -60,16 +60,9 @@ def write_log(message):
 # 検索時に使用した各種値をログに出力する。
 def set_log(Monster_info, thresh_aff):
 
-    message_list1 = ["", '純血統+レア','全モンスター', '全モンスター(純血統のみ除く)']
-    message_list2 = ["　　　　子", "　　　親①", "　　祖父①", "　　祖母①", "　　　親②", "　　祖父②", "　　祖母②"]
-
-    # 参照テーブル
-    write_log(f"◎モンスター参照テーブル：")
-    write_log(f"　　　　　子：{message_list1[st.session_state.session_datalist.lis_choice_table[0]]}")
-    write_log(f"　　親祖父母：{message_list1[st.session_state.session_datalist.lis_choice_table[1]]}")
-
-    # 指定モンスター★フォーマットの見直しが必要★
+    # 指定モンスター
     write_log(f"◎モンスター名：")
+    message_list1 = ["　　　　子", "　　　親①", "　　祖父①", "　　祖母①", "　　　親②", "　　祖父②", "　　祖母②"]
     for i, monster in enumerate(Monster_info):
         if monster.name.startswith("("):
             size2 = 60 - len(monster.name) * 4
@@ -77,18 +70,25 @@ def set_log(Monster_info, thresh_aff):
             size2 = 54 - len(monster.name) * 4
         size3 = 36 - len(monster.pedigree1) * 4
         size4 = 36 - len(monster.pedigree2) * 4
-        write_log(f"{message_list2[i]}:{monster.name:>{size2}}, メイン：{monster.pedigree1:>{size3}}, サブ：{monster.pedigree2:>{size4}}")
+        write_log(f"{message_list1[i]}:{monster.name:>{size2}}, メイン：{monster.pedigree1:>{size3}}, サブ：{monster.pedigree2:>{size4}}")
 
-    # message_list2にスペースを入れる前の処理。
-    # for i, monster in enumerate(Monster_info):
-    #     size1 = 10 - len(message_list2[i])
-    #     if monster.name.startswith("("):
-    #         size2 = 24 - len(monster.name)
-    #     else:
-    #         size2 = 22 - len(monster.name)
-    #     size3 = 12 - len(monster.pedigree1)
-    #     size4 = 12 - len(monster.pedigree2)
-    #     write_log(f"{message_list2[i]:>{size1}}:{monster.name:>{size2}}, メイン：{monster.pedigree1:>{size3}}, サブ：{monster.pedigree2:>{size4}}")
+    # 共通秘伝
+    write_log(f"◎共通秘伝：")
+    aff2 = st.session_state.input_common_aff2*DataList.common_aff2
+    aff3 = st.session_state.input_common_aff3*DataList.common_aff3
+    write_log(f"　　共通秘伝Ⅱ：{st.session_state.input_common_aff2}個(相性値+{aff2})")
+    write_log(f"　　共通秘伝Ⅲ：{st.session_state.input_common_aff3}個(相性値+{aff3})")
+    write_log(f"　　合計相性値：{aff2 + aff3}")
+
+    # 参照テーブル
+    write_log(f"◎モンスター参照テーブル：")
+    message_list2 = ["", '純血統+レア','全モンスター', '全モンスター(純血統のみ除く)']
+    write_log(f"　　　　　子：{message_list2[st.session_state.session_datalist.lis_choice_table[0]]}")
+    write_log(f"　　親祖父母：{message_list2[st.session_state.session_datalist.lis_choice_table[1]]}")
+
+    # 除外モンスター
+    write_log(f"◎検索除外モンスター：")
+    write_log(f"　　{st.session_state.del_mons_list}")
 
     # 計算式
     write_log(f"◎計算式：")
@@ -97,7 +97,6 @@ def set_log(Monster_info, thresh_aff):
     # 出力パターン
     write_log(f"◎出力パターン：")
     write_log(f"　　パターン方式：{st.session_state.radio_ptn}")
-    # ラベル
     lis_s_ops_labels = ['1.Z-ABB×BAA', '2.Z-ABC×BCA', '3.Z-ACC×BCC', 
                         '4.Z-ABB×BCA, Z-ABC×BAA',
                         '5.Z-ABB×BCC, Z-ACC×BAA', 
@@ -117,6 +116,7 @@ def set_log(Monster_info, thresh_aff):
     if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
         write_log(f"　　★★パターン方式に「2.特定パターン」を選択している場合は閾値自動設定のみ有効。")
     else:
+        write_log(f"　　★★使用していない閾値についても出力しているため注意。")
         write_log(f"　　a.子-親-祖父-祖母メイン血統の相性値閾値　　　　　　　　　  ：{thresh_aff.th_ped1_cpg}")
         write_log(f"　　b.子-親-祖父-祖母サブ血統の相性値閾値　　　　　　　　　　  ：{thresh_aff.th_ped2_cpg}")
         write_log(f"　　c.親①-親②メイン血統の相性値閾値　　　　　　　　　　　　 ：{thresh_aff.th_ped1_pp}")
@@ -135,7 +135,7 @@ def print_log():
     
     st.write('')
     st.subheader('ログ情報')
-    txt = st.text_area("設定情報や検索時の途中経過について出力されます。", st.session_state.log, height=700, disabled=True)
+    txt = st.text_area("設定情報や検索時の途中経過について出力されます。", st.session_state.log, height=850, disabled=True)
 
     return
 

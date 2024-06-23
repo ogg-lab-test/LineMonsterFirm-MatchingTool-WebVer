@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/2 sean of copyright owner
+   Copyright 2024/6/23 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -291,6 +291,10 @@ def create_combo_list(datalist):
     datalist.df_monsters_ex_org = df_monsters[df_monsters["主血統"] != df_monsters["副血統"]].copy()
     datalist.lis_mons_names_ex_org = datalist.df_monsters_ex_org.iloc[:, 0].to_list()
     datalist.lis_mons_names_ex_org.insert(0, "")
+
+    # 検索候補削除用のリスト
+    datalist.df_monsters_del = df_monsters[(df_monsters["副血統"] != "レア") | df_monsters["モンスター名"].str.startswith('(●レア)')].copy()
+    datalist.lis_mons_names_del = datalist.df_monsters_del.iloc[:, 0].to_list()
 
     # 変数をdatalistに格納
     datalist.df_monsters = df_monsters

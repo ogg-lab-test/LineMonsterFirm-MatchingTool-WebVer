@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/2 sean of copyright owner
+   Copyright 2024/6/23 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -254,10 +254,6 @@ def radio_disable_entry_cmb(datalist):
 # モンスター名のセレクトボックス設定後、設定値に応じて相性閾値を変更する。
 def entry_set_th_from_cmb(datalist):
     
-    # 閾値自動変更無効化チェック
-    if st.session_state.input_threshs_chg_disabled:
-        return
-    
     flag = int(st.session_state.radio_calc[0])
     if flag == DataList.choice_exp1:
         entry_set_th_from_cmb1(datalist)
@@ -278,6 +274,10 @@ def entry_set_th_from_cmb1(datalist):
     is_raremon = False
     num_rare = 0  # レアモンスター用の変数（血統ID）
     entry_set_th1()
+
+    # 閾値自動変更無効化チェック
+    if st.session_state.input_threshs_chg_disabled:
+        return
 
     # 設定値のカウント
     for i in range(len(st.session_state.select_options[0])):
@@ -332,6 +332,10 @@ def entry_set_th_from_cmb2(datalist):
     is_raremon_pg2 = False
     num_rare = 0  # レアモンスター用の変数（血統ID）
     entry_set_th2()
+
+    # 閾値自動変更無効化チェック
+    if st.session_state.input_threshs_chg_disabled:
+        return
 
     # 設定値のカウント
     for i in range(len(st.session_state.select_options[0])):
@@ -571,12 +575,12 @@ def select_calc_affinity(datalist, selected_rows):
     
     # モンスター名の設定
     child = Monster()
-    parent1 = Monster(selected_rows.iloc[0,2])
-    granpa1 = Monster(selected_rows.iloc[0,3])
-    granma1 = Monster(selected_rows.iloc[0,4])
-    parent2 = Monster(selected_rows.iloc[0,5])
-    granpa2 = Monster(selected_rows.iloc[0,6])
-    granma2 = Monster(selected_rows.iloc[0,7])
+    parent1 = Monster(selected_rows.iloc[-1,2])
+    granpa1 = Monster(selected_rows.iloc[-1,3])
+    granma1 = Monster(selected_rows.iloc[-1,4])
+    parent2 = Monster(selected_rows.iloc[-1,5])
+    granpa2 = Monster(selected_rows.iloc[-1,6])
+    granma2 = Monster(selected_rows.iloc[-1,7])
     Monster_info = [child, parent1, granpa1, granma1, parent2, granpa2, granma2]
 
     # 主血統/副血統の設定
@@ -602,6 +606,9 @@ def select_calc_affinity(datalist, selected_rows):
 # 相性値計算時に使用するテーブルを取得
 def set_using_table(datalist):
 
+    # 使用する変数の再格納
+    df_monsters = datalist.df_monsters_del
+
     # オプション確認
     if st.session_state.session_datalist.lis_choice_table[0] == DataList.choice_table_org:
         lis_mons_league_tb_c = datalist.lis_mons_league_tb_org
@@ -616,6 +623,15 @@ def set_using_table(datalist):
         lis_mons_league_tb_pg = datalist.lis_mons_league_tb_all
     elif st.session_state.session_datalist.lis_choice_table[1] == DataList.choice_table_ex_org:
         lis_mons_league_tb_pg = datalist.lis_mons_league_tb_ex_org
+    
+    # モンスターの削除
+    for mons_name in st.session_state.del_mons_list:
+        
+        df_temp = df_monsters[ mons_name == df_monsters["モンスター名"]]
+        main_id = df_temp.iloc[0, 3]
+        sub_id = df_temp.iloc[0, 4]
+        lis_mons_league_tb_c[main_id][sub_id] = "-"
+        lis_mons_league_tb_pg[main_id][sub_id] = "-"
     
     # 設定
     st.session_state.session_datalist.lis_mons_league_tb_c  = lis_mons_league_tb_c

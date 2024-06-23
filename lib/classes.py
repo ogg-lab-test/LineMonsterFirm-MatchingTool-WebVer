@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/2 sean of copyright owner
+   Copyright 2024/6/23 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@ class DataList():
 
     ### 各種設定値
     # 共通秘伝上昇値
-    common_aff2 = 5
+    common_aff2 = 5.0
     common_aff3 = 12.5
     # 数式の選択結果
     choice_exp1 = 1
@@ -146,7 +146,7 @@ class DataList():
     # 検索候補最大数
     N1 = 50000
     N2 = 50000
-    N3 = 1500000
+    N3 = 1200000
     # 最大通知結果数、メモリ使用量
     max_result_num = 4999 # +1されるため注意
     max_memory_size = 800.0
@@ -184,6 +184,10 @@ class DataList():
         
         self.df_monsters_ex_org = pd.DataFrame()
         self.lis_mons_names_ex_org = []
+
+        # 検索候補削除時間参照用
+        self.df_monsters_del = pd.DataFrame()
+        self.lis_mons_names_del = []
 
 
 

@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/2 sean of copyright owner
+   Copyright 2024/6/23 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -150,6 +150,8 @@ def init_session_state(datalist):
         st.session_state.radio_pg_prev = st.session_state.radio_table_list[1]
 
     # 削除対象モンスター保存場所
+    if "del_mons_list" not in st.session_state:
+        st.session_state.del_mons_list = []
     
     # 計算式設定
     if "radio_calc_list" not in st.session_state:
@@ -382,11 +384,17 @@ def create_multiselect(datalist):
 
     # 表示
     st.write('')
-    st.subheader('検索除外モンスター指定', help="検索結果に含めたくないモンスターについて選択します。")
+    st.subheader('検索除外モンスター指定', help="検索結果に含めたくないモンスターについて選択します。なお、現状では検索開始時に都度候補を外す仕様としています。(処理時間かかるのでよくない)")
         
     # マルチセレクトボックス作成
-    # pg = st.radio("親祖父母", st.session_state.radio_table_list, horizontal=True, key="radio_pg", on_change=reset_select_box, args=(datalist, False, False, True, ), help="検索時に使用する親祖父母のモンスター名テーブルを設定します。設定内容に合わせて閾値を自動調整します。")
-    selected_items = st.multiselect('検索結果に含めたくないモンスターがあれば指定してください。', datalist.lis_mons_names)
+    selected_items = st.multiselect('検索結果に含めたくないモンスターがあれば指定してください。', datalist.lis_mons_names_del, key="del_mons_list")
+
+    # 削除確定ボタン作成
+    # if st.button('削除対象決定') or st.session_state.auto_search_mode:
+    #     with st.spinner('processiong...'):
+    #         # 検索
+    #         ret = button_calc_affinity(datalist)
+
     return
 
 
@@ -536,14 +544,15 @@ def disp_result(datalist, used_memory):
                 data1 = set_AgGrid1(st.session_state.session_datalist.df_affinities)
                 
                 st.write('')
-                st.subheader(f"逆引き検索結果一覧", help="結果一覧から選択した1件を元に、親祖父母を固定して再検索します。相性値列等の相性値に関係する列の背景色凡例は次の通りです。黄：☆、緑：◎、水色：〇")
+                st.subheader(f"逆引き検索結果一覧", help="結果一覧から選択した最新の1件を元に、親祖父母を固定して再検索します。相性値列等の相性値に関係する列の背景色凡例は次の通りです。黄：☆、緑：◎、水色：〇")
                 data2 = set_AgGrid2(datalist, data1)
+                
         
         # 設定値の表示
         print_log()
         
         # 表示
-        st.write(f"現在のメモリ使用量: {used_memory:.2f} MB（デバッグ情報です。一般ユーザの方は無視してください。）")
+        st.write(f"現在のメモリ使用量: {used_memory:.2f} MB（デバッグ情報です。）")
 
     else:
         pass
@@ -568,7 +577,7 @@ def set_AgGrid1(df_affinities, add_color_flag=False):
         cellsytle_jscode_both = create_jacode_both()
         gb.configure_column("相性値", cellStyle=cellsytle_jscode_both)
         gb.configure_column("素相性値", cellStyle=cellsytle_jscode_both)
-    gb.configure_pagination()
+    # gb.configure_pagination()
     gridOptions = gb.build()
     data = AgGrid(df_affinities, 
         gridOptions=gridOptions, 
@@ -594,20 +603,21 @@ def set_AgGrid2(datalist, data):
         st.write(f"◎選択行")
         del selected_rows["level_0"]
         del selected_rows["評価"]
-        st.dataframe(selected_rows.iloc[0:1, :], width=2000, height=40, use_container_width=True)
+        last_ind = len(selected_rows.index)
+        st.dataframe(selected_rows.iloc[last_ind-1:last_ind, :], width=2000, height=40, use_container_width=True)
 
         # 1件目のレコードを使用して、相性値を計算して表示処理
         with st.spinner('processiong...'):
-            st.write(f"◎逆引き検索結果一覧")
+            st.write(f"◎逆引き検索結果")
             select_calc_affinity(datalist, selected_rows)
             set_AgGrid1(st.session_state.session_datalist.df_affinities_slct, True)
             # st.dataframe(st.session_state.session_datalist.df_affinities_slct, width=1000, height=400, use_container_width=True)
-            st.write(f"別の結果を検索する場合は、一度すべてのチェックを解除して、選択しなおしてください。")
+            st.write(f"別の結果を検索する場合は、もう一度選択を実施してください。")
     
     else:
     
         # 選択無なら、メッセージのみ表示
-        st.write(f"逆引き検索をする場合は、「検索結果一覧」から、任意のレコードに1つだけチェックをつけてください。チェックした親祖父母の組合せを元に再計算を実施します。")
+        st.write(f"逆引き検索をする場合は、「検索結果一覧」から、任意のレコードにチェックをつけてください。最後にチェックしたレコードの親祖父母の組合せを元に再計算を実施します。")
 
 
 
