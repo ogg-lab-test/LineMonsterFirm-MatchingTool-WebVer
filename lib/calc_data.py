@@ -56,7 +56,7 @@ def get_mark(affinity):
 
 
 
-# 上位呼び出し用（将来的にフラグを使用して、m, m+s等計算式を変更して参照する。）
+# 上位呼び出し用1
 def calc_affinity(Monster_info, thresh_aff, datalist):
 
     flag = int(st.session_state.radio_calc[0])
@@ -73,6 +73,17 @@ def calc_affinity(Monster_info, thresh_aff, datalist):
 
 
 
+# 上位呼び出し用2
+def calc_affinity_select(Monster_info, datalist):
+
+    flag = int(st.session_state.radio_calc[0])
+    if flag == DataList.choice_exp1:
+        return calc_affinity_m_select(Monster_info, datalist)
+    elif flag == DataList.choice_exp2:
+        return calc_affinity_m_s_select(Monster_info, datalist)
+
+
+
 # list型→DataFrame型に変換して整形実施。
 # calc_affinityの中で実施すること。(エラー処理未実施)
 def shape_data(lis_affinities):
@@ -80,13 +91,31 @@ def shape_data(lis_affinities):
     # データフレーム型への変換/ソート/ラベル付与/インデックスリセット/上限設定
     df_affinities = pd.DataFrame( lis_affinities )
     df_affinities = df_affinities.sort_values([1, 2], ascending=[False, True])
-    df_affinities.columns=['評価', '素相性値', '子', '親①', '祖父①', '祖母①', '親②', '祖父②', '祖母②']
+    df_affinities.columns=['評価', '相性値', '子', '親①', '祖父①', '祖母①', '親②', '祖父②', '祖母②']
     df_affinities = df_affinities.reset_index()
     num_rows = len(df_affinities.index)
     last_row = num_rows if num_rows <= DataList.max_result_num else DataList.max_result_num
     df_affinities = df_affinities.loc[0:last_row, :]
 
     return df_affinities.reset_index()
+
+
+
+# list型→DataFrame型に変換して整形実施。
+# calc_affinityの中で実施すること。(エラー処理未実施)
+def shape_data_select(lis_affinities):
+    
+    # データフレーム型への変換/ソート/ラベル付与/インデックスリセット/上限設定
+    df_affinities = pd.DataFrame( lis_affinities )
+    df_affinities = df_affinities.sort_values([2, 1], ascending=[False, True])
+    # ([mark, name_c, all_affinity, cpg1, cpg2, pp, affinity, common_aff])
+    df_affinities.columns=['評価', '子', '相性値', "親祖父母①", "親祖父母②", "親①②", "素相性値", "共通秘伝"]
+    df_affinities = df_affinities.reset_index()
+    num_rows = len(df_affinities.index)
+    last_row = num_rows if num_rows <= DataList.max_result_num else DataList.max_result_num
+    df_affinities = df_affinities.loc[0:last_row, :]
+
+    return df_affinities
 
 
 
@@ -129,6 +158,8 @@ def calc_affinity_m(Monster_info, thresh_aff, datalist):
     lis_parent2_1       = []
     lis_parent2_2       = [ [] for j in range(ped1_num) ]
     df_affinities       = pd.DataFrame( [] )
+    # 共通秘伝値事前計算
+    common_aff = st.session_state.input_common_aff2 * DataList.common_aff2 + st.session_state.input_common_aff3 * DataList.common_aff3
     
     # 子-親①-祖父①-祖母①のメイン/サブ血統(あり得ない組み合わせ、基準値以下はスキップ)
     i = 0
@@ -178,6 +209,9 @@ def calc_affinity_m(Monster_info, thresh_aff, datalist):
                                         return ret, df_affinities
 
     write_log(f"◎子-親①-祖父①-祖母①の組み合わせ：{i:,}件")
+    if i == 0:
+        st.error(f"子-親①-祖父①-祖母①の組み合わせ候補が0件のため停止します。\n子 親 祖父 祖母メイン血統に関する閾値やモンスター参照テーブルの見直しを実施してください。")
+        return ret, df_affinities
     
     # 子-親②-祖父②-祖母②のメイン/サブ血統(あり得ない組み合わせ、基準値以下はスキップ)
     j = 0
@@ -223,6 +257,9 @@ def calc_affinity_m(Monster_info, thresh_aff, datalist):
     
     
     write_log(f"◎子-親②-祖父②-祖母②の組み合わせ：{j:,}件")
+    if j == 0:
+        st.error(f"子-親②-祖父②-祖母②の組み合わせ候補が0件のため停止します。\n子 親 祖父 祖母メイン血統に関する閾値やモンスター参照テーブルの見直しを実施してください。")
+        return ret, df_affinities
     
     # 親①-親②のメイン/サブ血統(基準値以下はスキップ)
     k = 0
@@ -240,7 +277,7 @@ def calc_affinity_m(Monster_info, thresh_aff, datalist):
                                 continue
                             for cpg1_record in lis_affinities_cpg1[child1][child2][parent1_1][parent1_2]:
                                 for cpg2_record in lis_affinities_cpg2[child1][child2][parent2_1][parent2_2]:
-                                    affinity = pp1 + pp2 + cpg1_record[0] + cpg2_record[0]
+                                    affinity = pp1 + pp2 + cpg1_record[0] + cpg2_record[0] + common_aff
                                     mark = get_mark(affinity)
                                     # 判定、相性値、各名前（子、親①、祖父①、祖母①、親②、祖父②、祖母②の順）
                                     lis_affinities.append([mark, affinity, 
@@ -301,6 +338,8 @@ def calc_affinity_m_s(Monster_info, thresh_aff, datalist):
     lis_parent2_1       = []
     lis_parent2_2       = [ [] for j in range(ped1_num) ]
     df_affinities       = pd.DataFrame( [] )
+    # 共通秘伝値事前計算
+    common_aff = st.session_state.input_common_aff2 * DataList.common_aff2 + st.session_state.input_common_aff3 * DataList.common_aff3
 
     # 子-親①-祖父①-祖母①のメイン/サブ血統(あり得ない組み合わせ、基準値以下はスキップ)
     i = 0
@@ -363,6 +402,9 @@ def calc_affinity_m_s(Monster_info, thresh_aff, datalist):
                                         return ret, df_affinities
                                     
     write_log(f"◎子-親①-祖父①-祖母①の組み合わせ：{i:,}件")
+    if i == 0:
+        st.error(f"子-親①-祖父①-祖母①の組み合わせ候補が0件のため停止します。\n子-親①間、親①家系に関する閾値やモンスター参照テーブルの見直しを実施してください。")
+        return ret, df_affinities
     
     # 子-親②-祖父②-祖母②のメイン/サブ血統(あり得ない組み合わせ、基準値以下はスキップ)
     j = 0
@@ -420,6 +462,9 @@ def calc_affinity_m_s(Monster_info, thresh_aff, datalist):
                                         return ret, df_affinities
     
     write_log(f"◎子-親②-祖父②-祖母②の組み合わせ：{j:,}件")
+    if j == 0:
+        st.error(f"子-親②-祖父②-祖母②の組み合わせ候補が0件のため停止します。\n子-親①間、親①家系に関する閾値やモンスター参照テーブルの見直しを実施してください。")
+        return ret, df_affinities
     
     # 親①-親②のメイン/サブ血統(基準値以下はスキップ)
     k = 0
@@ -437,7 +482,7 @@ def calc_affinity_m_s(Monster_info, thresh_aff, datalist):
                                 continue
                             for cpg1_record in lis_affinities_cpg1[child1][child2][parent1_1][parent1_2]:
                                 for cpg2_record in lis_affinities_cpg2[child1][child2][parent2_1][parent2_2]:
-                                    affinity = pp1 + pp2 + cpg1_record[0] + cpg2_record[0]
+                                    affinity = pp1 + pp2 + cpg1_record[0] + cpg2_record[0] + common_aff
                                     mark = get_mark(affinity)
                                     # 判定、相性値、各名前（子、親①、祖父①、祖母①、親②、祖父②、祖母②の順）
                                     lis_affinities.append([mark, affinity, 
@@ -488,6 +533,8 @@ def calc_affinity_m_ptn(Monster_info, datalist):
     # lis_affinities_cpg1[child1][child2][parent1][parent2]
     lis_affinities      = []
     df_affinities       = pd.DataFrame( [] )
+    # 共通秘伝値事前計算
+    common_aff = st.session_state.input_common_aff2 * DataList.common_aff2 + st.session_state.input_common_aff3 * DataList.common_aff3
 
     # 閾値(空っぽ)
     thresh1 = 102
@@ -573,18 +620,23 @@ def calc_affinity_m_ptn(Monster_info, datalist):
                             zbaa_s = lis_affinities_s_cpg[z_s][b_s][a_s][a_s]
                             if zbaa_s < thresh2:
                                 continue
-                            ab_s_m = lis_affinities_m_s_cp[a_m][a_s][b_m][b_s]
-                            if ab_s_m < thresh3:
+                            ab = lis_affinities_m_s_cp[a_m][a_s][b_m][b_s]
+                            if ab < thresh3:
                                 continue
+                            ab_common = ab + common_aff
+                            
+                            # 事前に一部計算
+                            z_abb = zabb_m + zabb_s
+                            z_baa = zbaa_m + zbaa_s 
 
                             # 各パターンについて計算して
                             # 判定、相性値、各名前（子、親①、祖父①、祖母①、親②、祖父②、祖母②の順）でリストに結果を格納。
                             # Z-ABB×BAA
                             if st.session_state.check_ptn0:
                                 if c_is_not_1:
-                                    aff1 = ab_s_m + zabb_m + zabb_s + zbaa_m + zbaa_s 
-                                    mark1 = get_mark(aff1)
-                                    lis_affinities.append([mark1, aff1, name_z, name_a, name_b, name_b, name_b, name_a, name_a] )
+                                    aff0 = ab_common + z_abb + z_baa 
+                                    mark0 = get_mark(aff0)
+                                    lis_affinities.append([0, aff0, name_z, name_a, name_b, name_b, name_b, name_a, name_a] )
 
                             for c_m in Monster_info[2].ped1_num:
                                 zacc_m = lis_affinities_m_cpg[z_m][a_m][c_m][c_m]
@@ -619,26 +671,58 @@ def calc_affinity_m_ptn(Monster_info, datalist):
                                     if zbca_s < thresh2:
                                         continue
 
+                                    # 事前に一部計算
+                                    z_abc = zabc_m + zabc_s
+                                    z_bca = zbca_m + zbca_s
+                                    z_acc = zacc_m + zacc_s
+                                    z_bcc = zbcc_m + zbcc_s 
+
                                     # 各パターンについて計算して
                                     # 判定、相性値、各名前（子、親①、祖父①、祖母①、親②、祖父②、祖母②の順）でリストに結果を格納。
-                                    # Z-ABB×BCC
+                                    # Z-ABC×BCA
                                     if st.session_state.check_ptn1:
-                                        aff2 = ab_s_m + zabb_m + zabb_s + zbcc_m + zbcc_s 
-                                        mark2 = get_mark(aff2)
-                                        lis_affinities.append([mark2, aff2, name_z, name_a, name_b, name_b, name_b, name_c, name_c] ) 
-
+                                        aff1 = ab_common + z_abc + z_bca 
+                                        mark1 = get_mark(aff1)
+                                        lis_affinities.append([mark1, aff1, name_z, name_a, name_b, name_c, name_b, name_c, name_a] )
+                                    
                                     # Z-ACC×BCC
                                     if st.session_state.check_ptn2:
-                                        aff3 = ab_s_m + zacc_m + zacc_s + zbcc_m + zbcc_s 
-                                        mark3 = get_mark(aff3)
-                                        lis_affinities.append([mark3, aff3, name_z, name_a, name_c, name_c, name_b, name_c, name_c] )
+                                        aff2 = ab_common + z_acc + z_bcc 
+                                        mark2 = get_mark(aff2)
+                                        lis_affinities.append([mark2, aff2, name_z, name_a, name_c, name_c, name_b, name_c, name_c] )
 
-                                    # Z-ABC×BCA
+                                    # Z-ABB×BCA, Z-ABC×BAA
                                     if st.session_state.check_ptn3:
-                                        aff4 = ab_s_m + zabc_m + zabc_s + zbca_m + zbca_s 
-                                        mark4 = get_mark(aff4)
-                                        lis_affinities.append([mark4, aff4, name_z, name_a, name_b, name_c, name_b, name_c, name_a] )
+                                        aff3_1 = ab_common + z_abb + z_bca 
+                                        aff3_2 = ab_common + z_abc + z_baa 
+                                        if aff3_1 >= aff3_2:
+                                            mark3 = get_mark(aff3_1)
+                                            lis_affinities.append([mark3, aff3_1, name_z, name_a, name_b, name_b, name_b, name_c, name_a] )
+                                        else:
+                                            mark3 = get_mark(aff3_2)
+                                            lis_affinities.append([mark3, aff3_2, name_z, name_a, name_b, name_c, name_b, name_a, name_a] ) 
+                                    
+                                    # Z-ABB×BCC, Z-ACC×BAA
+                                    if st.session_state.check_ptn4:
+                                        aff4_1 = ab_common + z_abb + z_bcc
+                                        aff4_2 = ab_common + z_acc + z_baa
+                                        if aff4_1 >= aff4_2:
+                                            mark4 = get_mark(aff4_1)
+                                            lis_affinities.append([mark4, aff4_1, name_z, name_a, name_b, name_b, name_b, name_c, name_c] ) 
+                                        else:
+                                            mark4 = get_mark(aff4_2)
+                                            lis_affinities.append([mark4, aff4_2, name_z, name_a, name_c, name_c, name_b, name_a, name_a] ) 
 
+                                    # Z-ABC×BCC, Z-ACC×BCA
+                                    if st.session_state.check_ptn5:
+                                        aff5_1 = ab_common + z_abc + z_bcc
+                                        aff5_2 = ab_common + z_acc + z_bca
+                                        if aff5_1 >= aff5_2:
+                                            mark5 = get_mark(aff5_1)
+                                            lis_affinities.append([mark5, aff5_1, name_z, name_a, name_b, name_c, name_b, name_c, name_c] ) 
+                                        else:
+                                            mark5 = get_mark(aff5_2)
+                                            lis_affinities.append([mark5, aff5_2, name_z, name_a, name_c, name_c, name_b, name_c, name_a] ) 
 
     write_log(f"◎子-両親-祖父母①-祖父母②の組み合わせ：{len(lis_affinities):,}件")
     if len(lis_affinities) == 0:
@@ -671,6 +755,8 @@ def calc_affinity_m_s_ptn(Monster_info, datalist):
     # 保管用リストの作成
     lis_affinities      = []
     df_affinities       = pd.DataFrame( [] )
+    # 共通秘伝値事前計算
+    common_aff = st.session_state.input_common_aff2 * DataList.common_aff2 + st.session_state.input_common_aff3 * DataList.common_aff3
 
     # 閾値の設定
 
@@ -763,12 +849,16 @@ def calc_affinity_m_s_ptn(Monster_info, datalist):
                             if ba < thresh2:
                                 continue
 
-                            # 子→親①、子→親②、親①→親②の事前計算
-                            aff0 = za + zb + ab
+                            # 子→親①、子→親②、親①→親②、共通秘伝の事前計算
+                            aff_base = za + zb + ab + common_aff
 
                             # 子→祖父、親→祖父に関する事前計算
                             zbab = min(zb, ab)
                             zaba = min(za, ba)
+
+                            # 事前に一部計算
+                            z_abb = zbab*2
+                            z_baa = zaba*2
 
                             # 各パターンについて計算して
                             # 判定、相性値、各名前（子、親①、祖父①、祖母①、親②、祖父②、祖母②の順）でリストに結果を格納。
@@ -776,7 +866,7 @@ def calc_affinity_m_s_ptn(Monster_info, datalist):
                             # Z-ABB×BAA
                             if st.session_state.check_ptn0:
                                 if c_is_not_1:
-                                    aff1 = aff0 + zbab*2 + zaba*2
+                                    aff1 = aff_base + z_abb + z_baa
                                     mark1 = get_mark(aff1)
                                     lis_affinities.append([mark1, aff1, name_z, name_a, name_b, name_b, name_b, name_a, name_a] )
 
@@ -801,27 +891,61 @@ def calc_affinity_m_s_ptn(Monster_info, datalist):
                                     # 子→祖父、親→祖父に関する事前計算
                                     zcac = min(zc, ac)
                                     zcbc = min(zc, bc) 
+
+                                    # 事前に一部計算
+                                    z_abc = zbab + zcac
+                                    z_bca = zcbc + zaba
+                                    z_acc = zcac*2
+                                    z_bcc = zcbc*2
                                  
                                     # 各パターンについて計算して
                                     # 判定、相性値、各名前（子、親①、祖父①、祖母①、親②、祖父②、祖母②の順）でリストに結果を格納。
-
-                                    # Z-ABB×BCC
+                                    # Z-ABC×BCA
                                     if st.session_state.check_ptn1:
-                                        aff2 = aff0 + zbab*2 + zcbc*2
-                                        mark2 = get_mark(aff2)
-                                        lis_affinities.append([mark2, aff2, name_z, name_a, name_b, name_b, name_b, name_c, name_c] ) 
+                                        aff1 = aff_base + z_abc + z_bca 
+                                        mark1 = get_mark(aff1)
+                                        lis_affinities.append([mark1, aff1, name_z, name_a, name_b, name_c, name_b, name_c, name_a] )
 
                                     # Z-ACC×BCC
                                     if st.session_state.check_ptn2:
-                                        aff3 = aff0 + zcac*2 + zcbc*2
-                                        mark3 = get_mark(aff3)
-                                        lis_affinities.append([mark3, aff3, name_z, name_a, name_c, name_c, name_b, name_c, name_c] )
+                                        aff2 = aff_base + z_acc + z_bcc 
+                                        mark2 = get_mark(aff2)
+                                        lis_affinities.append([mark2, aff2, name_z, name_a, name_c, name_c, name_b, name_c, name_c] )
 
-                                    # Z-ABC×BCA
+                                    # Z-ABB×BCA, Z-ABC×BAA
                                     if st.session_state.check_ptn3:
-                                        aff4 = aff0 + zbab + zcac + zcbc + zaba
-                                        mark4 = get_mark(aff4)
-                                        lis_affinities.append([mark4, aff4, name_z, name_a, name_b, name_c, name_b, name_c, name_a] )
+                                        aff3_1 = aff_base + z_abb + z_bca 
+                                        aff3_2 = aff_base + z_abc + z_baa 
+                                        if aff3_1 >= aff3_2:
+                                            mark3 = get_mark(aff3_1)
+                                            lis_affinities.append([mark3, aff3_1, name_z, name_a, name_b, name_b, name_b, name_c, name_a] )
+                                        else:
+                                            mark3 = get_mark(aff3_2)
+                                            lis_affinities.append([mark3, aff3_2, name_z, name_a, name_b, name_c, name_b, name_a, name_a] ) 
+                                    
+                                    # Z-ABB×BCC, Z-ACC×BAA
+                                    if st.session_state.check_ptn4:
+                                        aff4_1 = aff_base + z_abb + z_bcc
+                                        aff4_2 = aff_base + z_acc + z_baa
+                                        if aff4_1 >= aff4_2:
+                                            mark4 = get_mark(aff4_1)
+                                            lis_affinities.append([mark4, aff4_1, name_z, name_a, name_b, name_b, name_b, name_c, name_c] ) 
+                                        else:
+                                            mark4 = get_mark(aff4_2)
+                                            lis_affinities.append([mark4, aff4_2, name_z, name_a, name_c, name_c, name_b, name_a, name_a] ) 
+
+                                    # Z-ABC×BCC, Z-ACC×BCA
+                                    if st.session_state.check_ptn5:
+                                        aff5_1 = aff_base + z_abc + z_bcc
+                                        aff5_2 = aff_base + z_acc + z_bca
+                                        if aff5_1 >= aff5_2:
+                                            mark5 = get_mark(aff5_1)
+                                            lis_affinities.append([mark5, aff5_1, name_z, name_a, name_b, name_c, name_b, name_c, name_c] ) 
+                                        else:
+                                            mark5 = get_mark(aff5_2)
+                                            lis_affinities.append([mark5, aff5_2, name_z, name_a, name_c, name_c, name_b, name_c, name_a] )                            
+
+                                    
 
                                     
     write_log(f"◎子-両親-祖父母①-祖父母②の組み合わせ：{len(lis_affinities):,}件")
@@ -836,4 +960,132 @@ def calc_affinity_m_s_ptn(Monster_info, datalist):
     ret = True
 
     return ret, df_affinities
+
+
+
+# 子のみ検索用(エラー処理などほとんど削除)
+def calc_affinity_m_select(Monster_info, datalist):
+    
+    # 参照高速化のためにローカル設定
+    lis_affinities_m_cp     = datalist.lis_affinities_m_cp
+    lis_affinities_s_cp     = datalist.lis_affinities_s_cp
+    lis_affinities_m_cpg    = datalist.lis_affinities_m_cpg
+    lis_affinities_s_cpg    = datalist.lis_affinities_s_cpg
+    lis_mons_league_tb_c    = st.session_state.session_datalist.lis_mons_league_tb_c
+    # 保管用リストの作成
+    lis_affinities      = []
+    df_affinities       = pd.DataFrame( [] )
+    # 共通秘伝値事前計算
+    common_aff = st.session_state.input_common_aff2 * DataList.common_aff2 + st.session_state.input_common_aff3 * DataList.common_aff3
+    
+    # 子-親-祖父-祖母のメイン/サブ血統(あり得ない組み合わせはスキップ)
+    parent1_m = Monster_info[1].ped1_num[0]
+    granpa1_m = Monster_info[2].ped1_num[0]
+    granma1_m = Monster_info[3].ped1_num[0]
+    parent1_s = Monster_info[1].ped2_num[0]
+    granpa1_s = Monster_info[2].ped2_num[0]
+    granma1_s = Monster_info[3].ped2_num[0]
+    parent2_m = Monster_info[4].ped1_num[0]
+    granpa2_m = Monster_info[5].ped1_num[0]
+    granma2_m = Monster_info[6].ped1_num[0]
+    parent2_s = Monster_info[4].ped2_num[0]
+    granpa2_s = Monster_info[5].ped2_num[0]
+    granma2_s = Monster_info[6].ped2_num[0]
+    pp1 = lis_affinities_m_cp[ parent1_m ][ parent2_m ]
+    pp2 = lis_affinities_s_cp[ parent1_s ][ parent2_s ]
+    for child1 in Monster_info[0].ped1_num:
+        cpg1_m = lis_affinities_m_cpg[child1][parent1_m][granpa1_m][granma1_m]
+        cpg2_m = lis_affinities_m_cpg[child1][parent2_m][granpa2_m][granma2_m]
+        for child2 in Monster_info[0].ped2_num:
+            name_c = lis_mons_league_tb_c[child1][child2]
+            if name_c == "-":
+                continue
+            cpg1_s = lis_affinities_s_cpg[child2][parent1_s][granpa1_s][granma1_s]
+            cpg2_s = lis_affinities_s_cpg[child2][parent2_s][granpa2_s][granma2_s]
+            cpg1 = cpg1_m + cpg1_s
+            cpg2 = cpg2_m + cpg2_s
+            pp = pp1 + pp2
+            affinity = cpg1 + cpg2 + pp
+            all_affinity = affinity + common_aff
+            mark = get_mark(all_affinity)
+            lis_affinities.append([mark, name_c, all_affinity, cpg1, cpg2, pp, affinity, common_aff])
+
+    # データ整形
+    df_affinities = shape_data_select(lis_affinities)
+
+    return df_affinities
+
+
+
+# 子のみ検索用(エラー処理などほとんど削除)
+def calc_affinity_m_s_select(Monster_info, datalist):
+
+    # 参照高速化のためにローカル設定
+    lis_affinities_m_s_cp   = datalist.lis_affinities_m_s_cp
+    lis_affinities_m_cp     = datalist.lis_affinities_m_cp
+    lis_affinities_s_cp     = datalist.lis_affinities_s_cp
+    lis_mons_league_tb_c    = st.session_state.session_datalist.lis_mons_league_tb_c
+    # 保管用リストの作成
+    lis_affinities      = []
+    df_affinities       = pd.DataFrame( [] )
+    # 共通秘伝値事前計算
+    common_aff = st.session_state.input_common_aff2 * DataList.common_aff2 + st.session_state.input_common_aff3 * DataList.common_aff3
+
+    # 変数に再格納
+    parent1_m = Monster_info[1].ped1_num[0]
+    parent1_s = Monster_info[1].ped2_num[0]
+    granpa1_m = Monster_info[2].ped1_num[0]
+    granpa1_s = Monster_info[2].ped2_num[0]
+    granma1_m = Monster_info[3].ped1_num[0]
+    granma1_s = Monster_info[3].ped2_num[0]
+    parent2_m = Monster_info[4].ped1_num[0]
+    parent2_s = Monster_info[4].ped2_num[0]
+    granpa2_m = Monster_info[5].ped1_num[0]
+    granpa2_s = Monster_info[5].ped2_num[0]
+    granma2_m = Monster_info[6].ped1_num[0]
+    granma2_s = Monster_info[6].ped2_num[0]
+    pgp1 = lis_affinities_m_s_cp[parent1_m][parent1_s][granpa1_m][granpa1_s]
+    pgm1 = lis_affinities_m_s_cp[parent1_m][parent1_s][granma1_m][granma1_s]
+    pgp2 = lis_affinities_m_s_cp[parent2_m][parent2_s][granpa2_m][granpa2_s]
+    pgm2 = lis_affinities_m_s_cp[parent2_m][parent2_s][granma2_m][granma2_s]
+    pp1 = lis_affinities_m_cp[ parent1_m ][ parent2_m ]
+    pp2 = lis_affinities_s_cp[ parent1_s ][ parent2_s ]
+
+    # 子-親-祖父-祖母のメイン/サブ血統(あり得ない組み合わせはスキップ)
+    for child_m in Monster_info[0].ped1_num:
+        for child_s in Monster_info[0].ped2_num:
+            name_c = lis_mons_league_tb_c[child_m][child_s]
+            if name_c == "-":
+                continue
+
+            # 親①側
+            cp1 = lis_affinities_m_s_cp[child_m][child_s][parent1_m][parent1_s]
+            cg1_1 = lis_affinities_m_s_cp[child_m][child_s][granpa1_m][granpa1_s]
+            cpg1_1 = min(cg1_1, pgp1)
+            cg1_2 = lis_affinities_m_s_cp[child_m][child_s][granma1_m][granma1_s]
+            cpg1_2 = min(cg1_2, pgm1)
+
+            # 親②側
+            cp2 = lis_affinities_m_s_cp[child_m][child_s][parent2_m][parent2_s]
+            cg2_1 = lis_affinities_m_s_cp[child_m][child_s][granpa2_m][granpa2_s]
+            cpg2_1 = min(cg2_1, pgp2)
+            cg2_2 = lis_affinities_m_s_cp[child_m][child_s][granma2_m][granma2_s]
+            cpg2_2 = min(cg2_2, pgm2)
+
+            # 全体計算
+            cpg1 = cp1 + cpg1_1 + cpg1_2
+            cpg2 = cp2 + cpg2_1 + cpg2_2
+            pp = pp1 + pp2
+            affinity = cpg1 + cpg2 + pp
+            all_affinity = affinity + common_aff
+            mark = get_mark(all_affinity)
+
+            # 格納
+            lis_affinities.append([mark, name_c, all_affinity, cpg1, cpg2, pp, affinity, common_aff])
+
+    # データ整形
+    df_affinities = shape_data_select(lis_affinities)
+
+    return df_affinities
+
 

@@ -40,6 +40,7 @@ from lib.process_log import init_log
 from lib.process_log import write_log
 from lib.process_log import set_log
 from lib.calc_data import calc_affinity
+from lib.calc_data import calc_affinity_select
 
 
 
@@ -133,13 +134,13 @@ def entry_set_th1():
     # ラジオボタンの内容に合わせてテキストボックスの内容を設定
     # 論理設計するともう少し最適化できそうだけど、いったんこれで。
     if c_num == DataList.choice_table_org and pg_num == DataList.choice_table_org:
-        st.session_state[f"input_thresh0"] = 109
-        st.session_state[f"input_thresh1"] = 95
-        st.session_state[f"input_thresh2"] = 33
+        st.session_state[f"input_thresh0"] = 112
+        st.session_state[f"input_thresh1"] = 96
+        st.session_state[f"input_thresh2"] = 36
         
     elif c_num == DataList.choice_table_org and pg_num == DataList.choice_table_all:
         st.session_state[f"input_thresh0"] = 117
-        st.session_state[f"input_thresh1"] = 96
+        st.session_state[f"input_thresh1"] = 99
         st.session_state[f"input_thresh2"] = 36
         
     elif c_num == DataList.choice_table_org and pg_num == DataList.choice_table_ex_org:
@@ -148,32 +149,32 @@ def entry_set_th1():
         st.session_state[f"input_thresh2"] = 36
         
     elif c_num == DataList.choice_table_all and pg_num == DataList.choice_table_org:
-        st.session_state[f"input_thresh0"] = 110
-        st.session_state[f"input_thresh1"] = 95
+        st.session_state[f"input_thresh0"] = 113
+        st.session_state[f"input_thresh1"] = 96
         st.session_state[f"input_thresh2"] = 35
     
     elif c_num == DataList.choice_table_all and pg_num == DataList.choice_table_all:
-        st.session_state[f"input_thresh0"] = 117
-        st.session_state[f"input_thresh1"] = 96
+        st.session_state[f"input_thresh0"] = 119
+        st.session_state[f"input_thresh1"] = 98
         st.session_state[f"input_thresh2"] = 38
         
     elif c_num == DataList.choice_table_all and pg_num == DataList.choice_table_ex_org:
-        st.session_state[f"input_thresh0"] = 116
-        st.session_state[f"input_thresh1"] = 96
+        st.session_state[f"input_thresh0"] = 118
+        st.session_state[f"input_thresh1"] = 97
         st.session_state[f"input_thresh2"] = 38
         
     elif c_num == DataList.choice_table_ex_org and pg_num == DataList.choice_table_org:
-        st.session_state[f"input_thresh0"] = 109
-        st.session_state[f"input_thresh1"] = 95
+        st.session_state[f"input_thresh0"] = 112
+        st.session_state[f"input_thresh1"] = 96
         st.session_state[f"input_thresh2"] = 33
         
     elif c_num == DataList.choice_table_ex_org and pg_num == DataList.choice_table_all:
-        st.session_state[f"input_thresh0"] = 117
-        st.session_state[f"input_thresh1"] = 96
+        st.session_state[f"input_thresh0"] = 119
+        st.session_state[f"input_thresh1"] = 97
         st.session_state[f"input_thresh2"] = 38
     
     elif c_num == DataList.choice_table_ex_org and pg_num == DataList.choice_table_ex_org:
-        st.session_state[f"input_thresh0"] = 116
+        st.session_state[f"input_thresh0"] = 117
         st.session_state[f"input_thresh1"] = 96
         st.session_state[f"input_thresh2"] = 38
     
@@ -205,12 +206,12 @@ def entry_set_th2():
     # 初期値設定
     st.session_state[f"input_thresh0"] = 0
     st.session_state[f"input_thresh1"] = 0
-    st.session_state[f"input_thresh2"] = 34
+    st.session_state[f"input_thresh2"] = 32
     st.session_state[f"input_thresh3"] = 32
-    st.session_state[f"input_thresh4"] = 75
-    st.session_state[f"input_thresh5"] = 75
-    st.session_state[f"input_thresh6"] = 75
-    st.session_state[f"input_thresh7"] = 75
+    st.session_state[f"input_thresh4"] = 74
+    st.session_state[f"input_thresh5"] = 74
+    st.session_state[f"input_thresh6"] = 74
+    st.session_state[f"input_thresh7"] = 74
 
     return
 
@@ -259,7 +260,7 @@ def entry_set_th_from_cmb(datalist):
     
     flag = int(st.session_state.radio_calc[0])
     if flag == DataList.choice_exp1:
-        entry_set_th_from_cmb1()
+        entry_set_th_from_cmb1(datalist)
     elif flag == DataList.choice_exp2:
         entry_set_th_from_cmb2(datalist)
     
@@ -269,38 +270,50 @@ def entry_set_th_from_cmb(datalist):
 
 # モンスター名のセレクトボックス設定後、設定値に応じて相性閾値を変更する。
 # min(m)の時これ。
-def entry_set_th_from_cmb1():
+def entry_set_th_from_cmb1(datalist):
     
     # 初期値設定
     total = 0
-    cnt_list = [0] * len(st.session_state.select_options[0])
     t_list = []
+    is_raremon = False
+    num_rare = 0  # レアモンスター用の変数（血統ID）
     entry_set_th1()
 
     # 設定値のカウント
     for i in range(len(st.session_state.select_options[0])):
-        if st.session_state[f'select_ops_name{i}'] != "":
-            cnt_list[i] += 1
+        name = st.session_state[f'select_ops_name{i}']
+        if name != "":
             total += 1
+            df_monster = datalist.df_monsters[datalist.df_monsters["モンスター名"] == name]
+            if not df_monster.empty and df_monster.iloc[0, 4] == num_rare:
+                is_raremon = True
+                break
 
     # 設定値に応じて、相性閾値を算出
-    if total >= 4:
-        t_list = [96, 96, 30, 30]
-    elif total == 3:
-        t_list = [107, 107, 30, 30]
-    elif total == 2:
-        t_list = [111, 96, 32, 32]
-    elif total == 1:
-        if cnt_list[0] == 1 or cnt_list[4] == 1:
-            t_list = [112, 96, 34, 32]
-        else:
-            t_list = [115, 96, 35, 32]
+    if total != 0:
+
+        if total >= 5:
+            t_list = [1, 1, 1, 1]
+        elif total == 4:
+            t_list = [96, 96, 30, 30]
+        elif total == 3:
+            t_list = [107, 107, 30, 30]
+        elif total == 2:
+            t_list = [111, 96, 32, 32]
+        elif total == 1:
+            t_list = [110, 98, 37, 37]
+
+        if is_raremon:
+            t_list[1] = 96
+            t_list[3] = 32
+                    
     else:
         # 設定値なしの場合は戻る。
         return
 
     # 設定値の数値チェック/テキストボックスの設定
     for i in range(4):
+        print(i)
         if t_list[i] < st.session_state[f"input_thresh{i}"]:
             st.session_state[f"input_thresh{i}"] = t_list[i]
 
@@ -354,6 +367,14 @@ def entry_set_th_from_cmb2(datalist):
         if is_raremon_pg2:
             st.session_state[f"input_thresh5"] = 64
             st.session_state[f"input_thresh7"] = 64
+        
+        if total >= 5:
+            st.session_state[f"input_thresh2"] = 1
+            st.session_state[f"input_thresh3"] = 1
+            st.session_state[f"input_thresh4"] = 1
+            st.session_state[f"input_thresh5"] = 1
+            st.session_state[f"input_thresh6"] = 1
+            st.session_state[f"input_thresh7"] = 1
 
     else:
         pass
@@ -542,6 +563,39 @@ def button_calc_affinity(datalist):
     st.session_state.session_datalist.df_affinities = df_affinities
 
     return ret
+
+
+
+# 検索結果のチェックボックスをつけてからの再検索関数
+def select_calc_affinity(datalist, selected_rows):
+    
+    # モンスター名の設定
+    child = Monster()
+    parent1 = Monster(selected_rows.iloc[0,2])
+    granpa1 = Monster(selected_rows.iloc[0,3])
+    granma1 = Monster(selected_rows.iloc[0,4])
+    parent2 = Monster(selected_rows.iloc[0,5])
+    granpa2 = Monster(selected_rows.iloc[0,6])
+    granma2 = Monster(selected_rows.iloc[0,7])
+    Monster_info = [child, parent1, granpa1, granma1, parent2, granpa2, granma2]
+
+    # 主血統/副血統の設定
+    for i in range(len(Monster_info)):
+        Monster_info[i].set_pedigree(datalist.df_monsters)
+    
+    # テーブル取得
+    set_using_table(datalist)
+    
+    # 相性計算
+    df_affinities = calc_affinity_select(Monster_info, datalist)
+
+    # テーブルの整形
+    del df_affinities["index"]
+
+    # 一時保存場所に設定
+    st.session_state.session_datalist.df_affinities_slct = df_affinities
+
+    return
 
 
 

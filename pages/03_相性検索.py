@@ -39,16 +39,13 @@ from lib.arrange_widget import disp_result
 def main():
 
     # ページの初期設定
-    init_page_setting("S Tool", "S Tool", "Version 3.1.0")
+    init_page_setting("S Tool", "S Tool", "Version 3.2.0")
 
     # データリストの初期化
     datalist = init_datalist_for_all_client()
 
     # セッション初期化
     init_session_state(datalist)
-
-    # ラジオボタン作成
-    create_radio_button(datalist)
 
     # リセット/セレクトボックスの作成
     create_select_area(datalist)
@@ -63,7 +60,7 @@ def main():
     create_search_button(datalist, used_memory)
     
     # 結果の表示
-    disp_result(used_memory)
+    disp_result(datalist, used_memory)
 
 
 

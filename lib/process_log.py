@@ -97,12 +97,15 @@ def set_log(Monster_info, thresh_aff):
     # 出力パターン
     write_log(f"◎出力パターン：")
     write_log(f"　　パターン方式：{st.session_state.radio_ptn}")
+    # ラベル
+    lis_s_ops_labels = ['1.Z-ABB×BAA', '2.Z-ABC×BCA', '3.Z-ACC×BCC', 
+                        '4.Z-ABB×BCA, Z-ABC×BAA',
+                        '5.Z-ABB×BCC, Z-ACC×BAA', 
+                        '6.Z-ABC×BCC, Z-ACC×BCA']
     message = ""
     if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
-        message += "Z-ABB×BAA, " if st.session_state.check_ptn0 else ""
-        message += "Z-ABB×BCC, " if st.session_state.check_ptn1 else ""
-        message += "Z-ACC×BCC, " if st.session_state.check_ptn2 else ""
-        message += "Z-ABC×BCA, " if st.session_state.check_ptn3 else ""
+        for i in range(DataList.num_check_ptn):
+            message += f"{lis_s_ops_labels[i]}, " if st.session_state[f"check_ptn{i}"] else ""
         if len(message) == 0:
             message = "パターン選択無（何も出力されないため注意。）"
     else:
@@ -130,7 +133,9 @@ def set_log(Monster_info, thresh_aff):
 # ログ領域のWeb上への表示
 def print_log():
     
-    txt = st.text_area("ログ情報", st.session_state.log, height=700, disabled=True, help="設定情報や検索時の途中経過について出力されます。")
+    st.write('')
+    st.subheader('ログ情報')
+    txt = st.text_area("設定情報や検索時の途中経過について出力されます。", st.session_state.log, height=700, disabled=True)
 
     return
 
