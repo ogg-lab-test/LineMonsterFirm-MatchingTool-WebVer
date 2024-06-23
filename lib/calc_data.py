@@ -510,6 +510,35 @@ def calc_affinity_m_s(Monster_info, thresh_aff, datalist):
 
 
 
+# リスト内の重複をチェックするローカル関数を定義
+def has_duplicates(seq):
+    return len(seq) != len(set(seq))
+
+
+
+# モンスターの指定で重複がないかチェックする。(True:重複有、False:重複無)
+def check_name(Monster_info):
+    
+    ret = False
+    
+    # 一旦リストに格納
+    mons_names = []
+    if Monster_info[0].name != "":
+        mons_names.append(Monster_info[0].name)
+    if Monster_info[1].name != "":
+        mons_names.append(Monster_info[1].name)
+    if Monster_info[2].name != "":
+        mons_names.append(Monster_info[2].name)
+    if Monster_info[4].name != "":
+        mons_names.append(Monster_info[4].name)
+
+    # 重複チェックなど
+    if len(mons_names) > 1:
+        ret = has_duplicates(mons_names)
+
+    return ret
+
+
 # 相性値全通り計算関数(ひどいforループだ…もっと効率いい方法あるだろ！いい加減にしろ！)。min(m)用
 def calc_affinity_m_ptn(Monster_info, datalist):
 
@@ -535,6 +564,11 @@ def calc_affinity_m_ptn(Monster_info, datalist):
     df_affinities       = pd.DataFrame( [] )
     # 共通秘伝値事前計算
     common_aff = st.session_state.input_common_aff2 * DataList.common_aff2 + st.session_state.input_common_aff3 * DataList.common_aff3
+
+    # 重複チェック
+    if check_name(Monster_info):
+        st.error(f"Z-子, A-親①, B-親②, C-祖父母候補のモンスターで同名のモンスターが指定されています。\n異なるモンスターを指定するか削除するかで対応してください。同名モンスターについて検索したい場合は、全パターン方式を使用してください。")
+        return ret, df_affinities
 
     # 閾値(空っぽ)
     thresh1 = 102
@@ -758,7 +792,10 @@ def calc_affinity_m_s_ptn(Monster_info, datalist):
     # 共通秘伝値事前計算
     common_aff = st.session_state.input_common_aff2 * DataList.common_aff2 + st.session_state.input_common_aff3 * DataList.common_aff3
 
-    # 閾値の設定
+    # 重複チェック
+    if check_name(Monster_info):
+        st.error(f"Z-子, A-親①, B-親②, C-祖父母候補のモンスターで同名のモンスターが指定されています。\n異なるモンスターを指定するか削除するかで対応してください。同名モンスターについて検索したい場合は、全パターン方式を使用してください。")
+        return ret, df_affinities
 
     # 閾値(空っぽ)
     thresh1 = 70
