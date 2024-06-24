@@ -30,6 +30,7 @@ import pandas as pd
 # 標準ライブラリ
 import datetime
 import time
+import copy
 
 # 自作ライブラリ等
 from lib.classes import Monster
@@ -610,23 +611,23 @@ def set_using_table(datalist):
 
     # オプション確認
     if st.session_state.session_datalist.lis_choice_table[0] == DataList.choice_table_org:
-        lis_mons_league_tb_c = datalist.lis_mons_league_tb_org
+        lis_mons_league_tb_c = copy.deepcopy(datalist.lis_mons_league_tb_org)
     elif st.session_state.session_datalist.lis_choice_table[0] == DataList.choice_table_all:
-        lis_mons_league_tb_c = datalist.lis_mons_league_tb_all
+        lis_mons_league_tb_c = copy.deepcopy(datalist.lis_mons_league_tb_all)
     elif st.session_state.session_datalist.lis_choice_table[0] == DataList.choice_table_ex_org:
-        lis_mons_league_tb_c = datalist.lis_mons_league_tb_ex_org
+        lis_mons_league_tb_c = copy.deepcopy(datalist.lis_mons_league_tb_ex_org)
         
     if st.session_state.session_datalist.lis_choice_table[1] == DataList.choice_table_org:
-        lis_mons_league_tb_pg = datalist.lis_mons_league_tb_org
+        lis_mons_league_tb_pg = copy.deepcopy(datalist.lis_mons_league_tb_org)
     elif st.session_state.session_datalist.lis_choice_table[1] == DataList.choice_table_all:
-        lis_mons_league_tb_pg = datalist.lis_mons_league_tb_all
+        lis_mons_league_tb_pg = copy.deepcopy(datalist.lis_mons_league_tb_all)
     elif st.session_state.session_datalist.lis_choice_table[1] == DataList.choice_table_ex_org:
-        lis_mons_league_tb_pg = datalist.lis_mons_league_tb_ex_org
+        lis_mons_league_tb_pg = copy.deepcopy(datalist.lis_mons_league_tb_ex_org)
     
     # モンスターの削除
     for mons_name in st.session_state.del_mons_list:
         
-        df_temp = df_monsters[ mons_name == df_monsters["モンスター名"]]
+        df_temp = df_monsters[ mons_name == df_monsters["モンスター名"] ]
         main_id = df_temp.iloc[0, 3]
         sub_id = df_temp.iloc[0, 4]
         lis_mons_league_tb_c[main_id][sub_id] = "-"

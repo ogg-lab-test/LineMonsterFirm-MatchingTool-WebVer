@@ -293,7 +293,7 @@ def create_details(datalist):
     # 表示
     st.write('')
     st.header('詳細設定')
-    with st.expander("詳細に設定したい場合はタップまたはクリックしてください。なお、モンスター名を設定する前に設定することをお勧めします。"):
+    with st.expander("詳細に設定したい場合はタップまたはクリックしてください。\nなお、モンスター名を設定する前に設定することをお勧めします。"):
         
         # 自動検索モードチェックボックス作成
         create_check_box_for_auto_search()
@@ -333,7 +333,7 @@ def create_check_box_for_auto_search():
     st.write('')
     st.subheader('自動検索モード', help="ONにすると、各パラメタを変更する度に検索を実行するようになります。連続して検索したい場合にONにしてください。なお、何か操作するたびに検索するようになるため、処理が重くなります。不要な際にOFFにすることをお勧めします。")
     
-    st.checkbox("自動検索モード", value=False, key=f"auto_search_mode")
+    st.checkbox("自動検索モード（試験的なモードです。利用前に必ずマニュアルをご確認ください。）", value=False, key=f"auto_search_mode")
 
     return
 
