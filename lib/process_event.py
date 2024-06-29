@@ -601,6 +601,7 @@ def select_calc_affinity(datalist, selected_rows, is_reverse=False):
     # 主血統/副血統の設定
     for i in range(len(Monster_info)):
         Monster_info[i].set_pedigree(datalist.df_monsters)
+        Monster_info[i].info()
     
     # テーブル再設定
     st.session_state.session_datalist.lis_mons_league_tb_c  = copy.deepcopy(datalist.lis_mons_league_tb_all)
