@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/23 sean of copyright owner
+   Copyright 2024/6/29 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -94,6 +94,14 @@ def radio_set_pg_cmb_th(datalist, is_reset=False):
             for i in range(DataList.num_monster-1):
                 st.session_state.select_options[0][i+1] = datalist.lis_mons_names_ex_org
             st.session_state.session_datalist.df_monsters_pg = datalist.df_monsters_ex_org
+        elif int(st.session_state.radio_pg[0]) == DataList.choice_table_only_org:
+            for i in range(DataList.num_monster-1):
+                st.session_state.select_options[0][i+1] = datalist.lis_mons_names_only_org
+            st.session_state.session_datalist.df_monsters_pg = datalist.df_monsters_only_org
+        elif int(st.session_state.radio_pg[0]) == DataList.choice_table_only_rare:
+            for i in range(DataList.num_monster-1):
+                st.session_state.select_options[0][i+1] = datalist.lis_mons_names_only_rare
+            st.session_state.session_datalist.df_monsters_pg = datalist.df_monsters_only_rare
         
         # 閾値の再設定
         entry_set_th()
@@ -419,20 +427,27 @@ def select_set_ops(datalist, who):
 
     # それぞれリストに変換して、必要に応じて重複を削除し、先頭に空白を設定。
     # モンスター名
-    df = df.sort_values(['主血統ID', 'モンスター名'], ascending=[True, True])
+    # df = df.sort_values(['主血統ID', 'モンスター名'], ascending=[True, True])
+    df = df.sort_values(['モンスター名'], ascending=[True])
     lis1 = df.iloc[:, 0].to_list()
     lis1.insert(0, "")
 
     # メイン血統
+    df = df.sort_values(['主血統'], ascending=[True])
     df_temp = df.drop_duplicates(subset="主血統")
     lis2 = df_temp.iloc[:, 1].to_list()
     lis2.insert(0, "")
+    if len(lis2) == 1:
+        lis2.insert(1, name_main)
     
     # サブ血統
-    df = df.sort_values(['副血統ID', 'モンスター名'], ascending=[True, True])
+    # df = df.sort_values(['副血統ID', 'モンスター名'], ascending=[True, True])
+    df = df.sort_values(['副血統'], ascending=[True])
     df_temp = df.drop_duplicates(subset="副血統")
     lis3 = df_temp.iloc[:, 2].to_list()
     lis3.insert(0, "")
+    if len(lis3) == 1:
+        lis3.insert(1, name_sub)
     
     # 設定
     st.session_state.select_options[0][who]=lis1
@@ -571,7 +586,7 @@ def button_calc_affinity(datalist):
 
 
 # 検索結果のチェックボックスをつけてからの再検索関数
-def select_calc_affinity(datalist, selected_rows):
+def select_calc_affinity(datalist, selected_rows, is_reverse=False):
     
     # モンスター名の設定
     child = Monster()
@@ -587,8 +602,9 @@ def select_calc_affinity(datalist, selected_rows):
     for i in range(len(Monster_info)):
         Monster_info[i].set_pedigree(datalist.df_monsters)
     
-    # テーブル取得
-    set_using_table(datalist)
+    # テーブル再設定
+    st.session_state.session_datalist.lis_mons_league_tb_c  = copy.deepcopy(datalist.lis_mons_league_tb_all)
+    st.session_state.session_datalist.lis_mons_league_tb_pg = copy.deepcopy(datalist.lis_mons_league_tb_all)
     
     # 相性計算
     df_affinities = calc_affinity_select(Monster_info, datalist)
@@ -597,7 +613,10 @@ def select_calc_affinity(datalist, selected_rows):
     del df_affinities["index"]
 
     # 一時保存場所に設定
-    st.session_state.session_datalist.df_affinities_slct = df_affinities
+    if is_reverse:
+        st.session_state.session_datalist.df_affinities_slct_r = df_affinities
+    else:
+        st.session_state.session_datalist.df_affinities_slct = df_affinities
 
     return
 
@@ -623,6 +642,10 @@ def set_using_table(datalist):
         lis_mons_league_tb_pg = copy.deepcopy(datalist.lis_mons_league_tb_all)
     elif st.session_state.session_datalist.lis_choice_table[1] == DataList.choice_table_ex_org:
         lis_mons_league_tb_pg = copy.deepcopy(datalist.lis_mons_league_tb_ex_org)
+    elif st.session_state.session_datalist.lis_choice_table[1] == DataList.choice_table_only_org:
+        lis_mons_league_tb_pg = copy.deepcopy(datalist.lis_mons_league_tb_only_org)
+    elif st.session_state.session_datalist.lis_choice_table[1] == DataList.choice_table_only_rare:
+        lis_mons_league_tb_pg = copy.deepcopy(datalist.lis_mons_league_tb_only_rare)
     
     # モンスターの削除
     for mons_name in st.session_state.del_mons_list:

@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/23 sean of copyright owner
+   Copyright 2024/6/29 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -30,6 +30,11 @@ from st_aggrid.shared import JsCode
 import pandas as pd
 # import psutil
 # from memory_profiler import profile
+import matplotlib.pyplot as plt
+import japanize_matplotlib
+
+# 標準ライブラリ
+import copy
 
 # 自作ライブラリ等
 from lib.classes import DataList
@@ -138,7 +143,7 @@ def init_session_state(datalist):
     ### ラジオボタンの選択結果保存領域作成(★ラジオボタンの選択結果は先頭1文字を使用して判別しているため注意。)
     # 参照テーブル設定
     if "radio_table_list" not in st.session_state:
-        st.session_state.radio_table_list = ["1.純血統+レア", "2.全モンスター", "3.全モンスター(純血統のみ除く)"]
+        st.session_state.radio_table_list = ["1.純血統+レア", "2.全モンスター", "3.全モンスター(純血統のみ除く)", "4.純血統のみ", "5.レアモンのみ"]
 
     if "radio_c" not in st.session_state:
         st.session_state.radio_c = st.session_state.radio_table_list[1]
@@ -212,7 +217,7 @@ def create_select_area(datalist):
 
     # 表示
     st.write('')
-    st.header('モンスター名設定', help="ここで検索したいモンスターの設定をします。全て空白でも検索可能です。(メイン/サブ血統欄は、基本的にモンスター名絞込み用の設定です。）")
+    st.header('◾モンスター名設定', help="ここで検索したいモンスターの設定をします。全て空白でも検索可能です。(メイン/サブ血統欄は、基本的にモンスター名絞込み用の設定です。）")
 
     # リセットボタンの作成(押下でリセット＆セレクトボックス作成)
     if st.button('モンスター名選択リセット', help="選択済みのセレクトボックスの内容と閾値を初期化します。"):
@@ -292,7 +297,7 @@ def create_details(datalist):
 
     # 表示
     st.write('')
-    st.header('詳細設定')
+    st.header('◾詳細設定')
     with st.expander("詳細に設定したい場合はタップまたはクリックしてください。\nなお、モンスター名を設定する前に設定することをお勧めします。"):
         
         # 自動検索モードチェックボックス作成
@@ -331,7 +336,7 @@ def create_check_box_for_auto_search():
 
     # 表示
     st.write('')
-    st.subheader('自動検索モード', help="ONにすると、各パラメタを変更する度に検索を実行するようになります。連続して検索したい場合にONにしてください。なお、何か操作するたびに検索するようになるため、処理が重くなります。不要な際にOFFにすることをお勧めします。")
+    st.subheader('▪自動検索モード', help="ONにすると、各パラメタを変更する度に検索を実行するようになります。連続して検索したい場合にONにしてください。なお、何か操作するたびに検索するようになるため、処理が重くなります。不要な際にOFFにすることをお勧めします。")
     
     st.checkbox("自動検索モード（試験的なモードです。利用前に必ずマニュアルをご確認ください。）", value=False, key=f"auto_search_mode")
 
@@ -344,7 +349,7 @@ def create_number_input_for_common_aff():
 
     # 表示
     st.write('')
-    st.subheader('共通秘伝設定', help="各親の共通秘伝について設定できます。")
+    st.subheader('▪共通秘伝設定', help="各親の共通秘伝について設定できます。")
 
     # テキスト入力エリアを設定
     col1, col2= st.columns(2)
@@ -362,13 +367,13 @@ def create_radio_button(datalist):
 
     # 表示
     st.write('')
-    st.subheader('モンスター参照テーブル', help="子/親祖父母毎に検索で使用するテーブルを設定します。変更時、関連するモンスター名設定をクリアし、閾値を再設定します。")
+    st.subheader('▪モンスター参照テーブル', help="子/親祖父母毎に検索で使用するテーブルを設定します。変更時、関連するモンスター名設定をクリアし、閾値を再設定します。")
     
     # テーブル選択結果格納場所の初期化
     st.session_state.session_datalist.lis_choice_table = [int(st.session_state.radio_c[0]), int(st.session_state.radio_pg[0])]
     
     # ラジオボタン作成
-    c  = st.radio("子",      st.session_state.radio_table_list, horizontal=True, key="radio_c", on_change=reset_select_box, args=(datalist, False, True, False, ), help="検索時に使用する子のモンスター名テーブルを設定します。設定内容に合わせて閾値を自動調整します。")
+    c  = st.radio("子",      st.session_state.radio_table_list[0:3], horizontal=True, key="radio_c", on_change=reset_select_box, args=(datalist, False, True, False, ), help="検索時に使用する子のモンスター名テーブルを設定します。設定内容に合わせて閾値を自動調整します。")
     pg = st.radio("親祖父母", st.session_state.radio_table_list, horizontal=True, key="radio_pg", on_change=reset_select_box, args=(datalist, False, False, True, ), help="検索時に使用する親祖父母のモンスター名テーブルを設定します。設定内容に合わせて閾値を自動調整します。")
 
     # 値設定
@@ -384,7 +389,7 @@ def create_multiselect(datalist):
 
     # 表示
     st.write('')
-    st.subheader('検索除外モンスター指定', help="検索結果に含めたくないモンスターについて選択します。なお、現状では検索開始時に都度候補を外す仕様としています。(処理時間かかるのでよくない)")
+    st.subheader('▪検索除外モンスター指定', help="検索結果に含めたくないモンスターについて選択します。なお、現状では検索開始時に都度候補を外す仕様としています。(処理時間かかるのでよくない)")
         
     # マルチセレクトボックス作成
     selected_items = st.multiselect('検索結果に含めたくないモンスターがあれば指定してください。', datalist.lis_mons_names_del, key="del_mons_list")
@@ -404,7 +409,7 @@ def create_radio_button_exp(datalist):
 
     # 表示
     st.write('')
-    st.subheader('計算式', help="相性値を計算する際の計算式を指定します。")
+    st.subheader('▪計算式', help="相性値を計算する際の計算式を指定します。")
 
     # ラジオボタン作成
     choice  = st.radio("計算手法",      st.session_state.radio_calc_list, horizontal=True, key="radio_calc", index=1, on_change=entry_set_th_from_cmb, args=(datalist, ), help="相性値を計算する際の計算式を指定します。(m+s)式が現状主流の方式です。")
@@ -418,7 +423,7 @@ def create_radio_button_ptn(datalist):
 
     # 表示
     st.write('')
-    st.subheader('出力パターン', help="全パターンを選択すると、すべての組合せから検索します。特定パターンを選択すると、次のチェックボックスで選択されたパターンのみに絞って検索します。")
+    st.subheader('▪出力パターン', help="全パターンを選択すると、すべての組合せから検索します。特定パターンを選択すると、次のチェックボックスで選択されたパターンのみに絞って検索します。")
 
     # ラジオボタン作成
     choice  = st.radio("パターン方式",      st.session_state.radio_ptn_list, horizontal=True, key="radio_ptn", index=1, on_change=radio_disable_entry_cmb, args=(datalist, ), help="計算結果の出力パターンを指定します。出力パターンの詳細については補足ページをご確認ください。")
@@ -441,9 +446,9 @@ def create_check_box():
         "親と祖父母が入れ替わる形の形式を出力します。",
         "1.の組合せの各親の祖父母どちらか一方を別モンスターに置き換えた形式を出力します。",
         "親①、親②で同じ祖父母を使用するパターンを出力します。",
-        "1.と2.の折衷案を出力します。なお、いずれかのパターンで相性の良い方のみを出力します。同じ場合は、前者を優先して出力します。",
-        "1.と3.の折衷案を出力します。なお、いずれかのパターンで相性の良い方のみを出力します。同じ場合は、前者を優先して出力します。",
-        "2.と3.の折衷案を出力します。なお、いずれかのパターンで相性の良い方のみを出力します。同じ場合は、前者を優先して出力します。",
+        "1.と2.の折衷案を出力します。",
+        "1.と3.の折衷案を出力します。",
+        "2.と3.の折衷案を出力します。",
     ]
 
     # チェックボックス作成
@@ -467,7 +472,7 @@ def create_number_input():
 
     # 表示
     st.write('')
-    st.subheader('相性値閾値設定', help="本項目での設定値未満の相性値の場合、検索候補から除外します。（よくわからない場合はそのままで問題なし。）")
+    st.subheader('▪相性値閾値設定', help="本項目での設定値未満の相性値の場合、検索候補から除外します。（よくわからない場合はそのままで問題なし。）")
 
     # 出力パターンが全パターンの時に表示処理
     if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:  
@@ -510,7 +515,7 @@ def create_search_button(datalist, used_memory):
 
     # 表示
     st.write('')
-    st.header('検索', help="「検索開始！」ボタン押下後に設定値および結果が出力されます。なお、結果は最大5,000件までとなります。また、自動検索モード有効時は基本的に使用しませんが、もし自動検索が動作しない場合はこちらのボタンを使用してください。")
+    st.header('◾検索', help="「検索開始！」ボタン押下後に設定値および結果が出力されます。なお、結果は最大5,000件までとなります。また、自動検索モード有効時は基本的に使用しませんが、もし自動検索が動作しない場合はこちらのボタンを使用してください。")
 
     # 検索ボタン作成(ボタン押下で検索開始)
     if st.button('検索開始！') or st.session_state.auto_search_mode:
@@ -540,11 +545,11 @@ def disp_result(datalist, used_memory):
                 # st.dataframe(st.session_state.session_datalist.df_affinities, width=2000, height=500, use_container_width=True)
 
                 st.write('')
-                st.subheader(f"検索結果一覧", help="結果一覧が表示されます。相性値列の背景色凡例は次の通りです。黄：☆、緑：◎、水色：〇")
+                st.subheader(f"▪検索結果一覧", help="結果一覧が表示されます。相性値列の背景色凡例は次の通りです。黄：☆、緑：◎、水色：〇")
                 data1 = set_AgGrid1(st.session_state.session_datalist.df_affinities)
                 
                 st.write('')
-                st.subheader(f"逆引き検索結果一覧", help="結果一覧から選択した最新の1件を元に、親祖父母を固定して再検索します。相性値列等の相性値に関係する列の背景色凡例は次の通りです。黄：☆、緑：◎、水色：〇")
+                st.subheader(f"▪逆引き検索結果一覧", help="結果一覧から選択した最新の1件を元に、親祖父母を固定して再検索します。相性値列等の相性値に関係する列の背景色凡例は次の通りです。黄：☆、緑：◎、水色：〇")
                 data2 = set_AgGrid2(datalist, data1)
                 
         
@@ -600,19 +605,100 @@ def set_AgGrid2(datalist, data):
     if len(selected_rows.index) > 0:
 
         # 一行以上あれば表示処理
-        st.write(f"◎選択行")
+
+        ### 順親
+        # 選択行設定
         del selected_rows["level_0"]
         del selected_rows["評価"]
         last_ind = len(selected_rows.index)
-        st.dataframe(selected_rows.iloc[last_ind-1:last_ind, :], width=2000, height=40, use_container_width=True)
 
-        # 1件目のレコードを使用して、相性値を計算して表示処理
+        # 1件目のレコードを使用して、相性値を計算
         with st.spinner('processiong...'):
-            st.write(f"◎逆引き検索結果")
-            select_calc_affinity(datalist, selected_rows)
-            set_AgGrid1(st.session_state.session_datalist.df_affinities_slct, True)
-            # st.dataframe(st.session_state.session_datalist.df_affinities_slct, width=1000, height=400, use_container_width=True)
-            st.write(f"別の結果を検索する場合は、もう一度選択を実施してください。")
+            select_calc_affinity(datalist, selected_rows, False)
+        
+        # 選択行に関する統計量
+        label = ['種別', '☆の個数', '◎の個数', '〇の個数', '480以上の個数', '600以上の個数', '平均値', '中央値', '最小値', '最大値']
+        mark_st1_1  = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 1] == '☆').sum()
+        mark_dci1_1 = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 1] == '◎').sum()
+        mark_ci1_1  = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 1] == '〇').sum()
+        mark_st1_2  = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 4:6] > 260).sum()
+        mark_dci1_2 = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 4:6] > 210).sum() - mark_st1_2
+        mark_ci1_2  = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 4:6] > 160).sum() - mark_st1_2 - mark_dci1_2
+        num1_1      = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 3] >= 480).sum()
+        num1_2      = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 3] >= 600).sum()
+        mean1       = st.session_state.session_datalist.df_affinities_slct.mean(numeric_only=True)
+        med1        = st.session_state.session_datalist.df_affinities_slct.median(numeric_only=True)
+        min1        = st.session_state.session_datalist.df_affinities_slct.min(numeric_only=True)
+        max1        = st.session_state.session_datalist.df_affinities_slct.max(numeric_only=True)
+        statistics1 = pd.DataFrame([["相性値",    mark_st1_1, mark_dci1_1, mark_ci1_1, str(num1_1), str(num1_2), mean1[1], med1[1], min1[1], max1[1]],
+                                    ["親祖父母①", mark_st1_2[0], mark_dci1_2[0], mark_ci1_2[0], "-", "-", mean1[2], med1[2], min1[2], max1[2]],
+                                    ["親祖父母②", mark_st1_2[1], mark_dci1_2[1], mark_ci1_2[1], "-", "-", mean1[3], med1[3], min1[3], max1[3]]])
+        statistics1.columns = label
+
+        # まとめて出力
+        st.write(f"◎選択行")
+        st.dataframe(selected_rows.iloc[last_ind-1:last_ind, :], width=2000, height=40, use_container_width=True)
+        st.write(f"◎選択行の相性値統計量")
+        st.dataframe(statistics1, width=2000, height=150, use_container_width=True)
+        st.write(f"◎逆引き検索結果")
+        set_AgGrid1(st.session_state.session_datalist.df_affinities_slct, True)
+        # st.dataframe(st.session_state.session_datalist.df_affinities_slct, width=1000, height=400, use_container_width=True)
+
+
+        ### 逆親
+        # 逆親設定
+        selected_rows_r = copy.deepcopy(selected_rows.iloc[last_ind-1:last_ind, :])
+        selected_rows_r.iloc[0, 2] = selected_rows.iloc[last_ind-1:last_ind, 5]
+        selected_rows_r.iloc[0, 3] = selected_rows.iloc[last_ind-1:last_ind, 6]
+        selected_rows_r.iloc[0, 4] = selected_rows.iloc[last_ind-1:last_ind, 7]
+        selected_rows_r.iloc[0, 5] = selected_rows.iloc[last_ind-1:last_ind, 2]
+        selected_rows_r.iloc[0, 6] = selected_rows.iloc[last_ind-1:last_ind, 3]
+        selected_rows_r.iloc[0, 7] = selected_rows.iloc[last_ind-1:last_ind, 4]
+
+        # 相性値を計算
+        with st.spinner('processiong...'):
+            select_calc_affinity(datalist, selected_rows_r, True)
+            selected_rows_r.iloc[0, 0] = st.session_state.session_datalist.df_affinities_slct_r[st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 2] == selected_rows_r.iloc[0, 1]].iloc[0, 3]
+
+        # 選択行(逆親)に関する統計量
+        mark_st2_1  = (st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 1] == '☆').sum()
+        mark_dci2_1 = (st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 1] == '◎').sum()
+        mark_ci2_1  = (st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 1] == '〇').sum()
+        num2_1      = (st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 3] >= 480).sum()
+        num2_2      = (st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 3] >= 600).sum()
+        mean2       = st.session_state.session_datalist.df_affinities_slct_r.mean(numeric_only=True)
+        med2        = st.session_state.session_datalist.df_affinities_slct_r.median(numeric_only=True)
+        # pertile2    = st.session_state.session_datalist.df_affinities_slct_r.quantile(0.8)
+        min2        = st.session_state.session_datalist.df_affinities_slct_r.min(numeric_only=True)
+        max2        = st.session_state.session_datalist.df_affinities_slct_r.max(numeric_only=True)
+        statistics2 = pd.DataFrame([["相性値", mark_st2_1, mark_dci2_1, mark_ci2_1, num2_1, num2_2, mean2[1], med2[1], min2[1], max2[1]]])
+        statistics2.columns = label
+
+        # まとめて出力
+        st.write(f"◎選択行（逆親バージョン）")
+        st.dataframe(selected_rows_r, width=2000, height=40, use_container_width=True)
+        st.write(f"◎選択行の相性値統計量（逆親バージョン）")
+        st.dataframe(statistics2, width=2000, height=50, use_container_width=True)
+        st.write(f"◎逆引き検索結果（逆親バージョン）")
+        set_AgGrid1(st.session_state.session_datalist.df_affinities_slct_r, True)
+        # st.dataframe(st.session_state.session_datalist.df_affinities_slct_r, width=1000, height=400, use_container_width=True)
+
+
+        # 図の出力
+        with st.expander("★逆引き検索結果のヒストグラムを表示したい場合はタップまたはクリックしてください。"):
+            st.write(f"◎逆引き検索結果のヒストグラム）")
+            fig, ax = plt.subplots()
+            c1,c2 = "red","blue"
+            l1,l2 = "選択行","選択行（逆親）"
+            ax.set_xlabel('相性値')
+            ax.set_ylabel('頻度')
+            ax.grid()
+            ax.hist(st.session_state.session_datalist.df_affinities_slct.iloc[:, 3],   bins=30, color=c1, label=l1, range=(350, 650), histtype="stepfilled")
+            ax.hist(st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 3], bins=30, color=c2, label=l2, range=(350, 650), histtype="step")
+            ax.legend(loc=0)
+            st.pyplot(fig, use_container_width=False)
+
+        st.write(f"別の結果を検索する場合は、もう一度選択を実施してください。")
     
     else:
     

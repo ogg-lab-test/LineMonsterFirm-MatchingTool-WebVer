@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/23 sean of copyright owner
+   Copyright 2024/6/29 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -182,16 +182,17 @@ def add_raremon(datalist):
     name_list_m_row.remove("レア")
 
     # レアモンタグのついたレコードの主血統名を抽出
-    df_temp = df_monsters[df_monsters["モンスター名"].str.startswith('(●レア)')]
+    df_temp = df_monsters[df_monsters["モンスター名"].str.startswith('（●レア）')]
     name_list_raremon_m = df_temp.iloc[:, 1].to_list()
 
     # レアモンタグのついたレコードの主血統名のリスト内に、比較用リストの名前がない場合に仮インデックスでレコードを追加
     for i, name in enumerate(name_list_m_row):
         if name not in name_list_raremon_m:
-            df_monsters.loc[f'temp{i}'] = [f'(●レア){name}', name, 'レア', i+1, 0]
+            df_monsters.loc[f'temp{i}'] = [f'（●レア）{name}', name, 'レア', i+1, 0]
     
     # モンスター名のファイルのみソート
-    df_monsters = df_monsters.sort_values(['主血統ID', 'モンスター名'], ascending=[True, True])
+    # df_monsters = df_monsters.sort_values(['主血統ID', 'モンスター名'], ascending=[True, True])
+    df_monsters = df_monsters.sort_values(['モンスター名'], ascending=[True])
 
     # インデックスをリセットして、新たに発生するindex列を削除
     df_monsters = df_monsters.reset_index()
@@ -220,13 +221,15 @@ def create_league_table(datalist):
 
     # リーグ表用のリストの初期化
     length = len(datalist.lis_affinities_m_cp)
-    lis_mons_league_tb_all     = [[ "-" for i in range(length)] for i in range(length)]
-    lis_mons_league_tb_ex_org  = [[ "-" for i in range(length)] for i in range(length)]
-    lis_mons_league_tb_org     = [[ "-" for i in range(length)] for i in range(length)]
+    lis_mons_league_tb_all       = [[ "-" for i in range(length)] for i in range(length)]
+    lis_mons_league_tb_ex_org    = [[ "-" for i in range(length)] for i in range(length)]
+    lis_mons_league_tb_org       = [[ "-" for i in range(length)] for i in range(length)]
+    lis_mons_league_tb_only_org  = [[ "-" for i in range(length)] for i in range(length)]
+    lis_mons_league_tb_only_rare = [[ "-" for i in range(length)] for i in range(length)]
     
     # レアモンスター用の変数（血統ID、名前保存場所）
     num_rare = 0
-    name_rare = "(●レア)"  # "(●レア)"とついたモンスター名を保存する場所。
+    name_rare = "（●レア）"  # "（●レア）"とついたモンスター名を保存する場所。
 
     # モンスター名リスト → リーグ表に変換
     for row in lis_monsters:
@@ -235,21 +238,25 @@ def create_league_table(datalist):
                 # タグ用のレアモンスター名があってもリーグ表には追加しない。
                 continue
             if row[4] == num_rare:
-                lis_mons_league_tb_all[row[3]][row[4]]     = name_rare + row[1]
-                lis_mons_league_tb_ex_org[row[3]][row[4]] = name_rare + row[1]
-                lis_mons_league_tb_org[row[3]][row[4]]     = name_rare + row[1]
+                lis_mons_league_tb_all[row[3]][row[4]]       = name_rare + row[1]
+                lis_mons_league_tb_ex_org[row[3]][row[4]]    = name_rare + row[1]
+                lis_mons_league_tb_org[row[3]][row[4]]       = name_rare + row[1]
+                lis_mons_league_tb_only_rare[row[3]][row[4]] = name_rare + row[1]
             else:
                 lis_mons_league_tb_all[row[3]][row[4]]     = row[0]
-                lis_mons_league_tb_ex_org[row[3]][row[4]] = row[0]
+                lis_mons_league_tb_ex_org[row[3]][row[4]]  = row[0]
                 
         if row[3] == row[4]:
             lis_mons_league_tb_ex_org[row[3]][row[4]]     = "-"
-            lis_mons_league_tb_org[row[3]][row[4]]         = row[0]
+            lis_mons_league_tb_org[row[3]][row[4]]        = row[0]
+            lis_mons_league_tb_only_org[row[3]][row[4]]   = row[0]
     
     # 設定
-    datalist.lis_mons_league_tb_all     = lis_mons_league_tb_all
-    datalist.lis_mons_league_tb_ex_org  = lis_mons_league_tb_ex_org
-    datalist.lis_mons_league_tb_org     = lis_mons_league_tb_org
+    datalist.lis_mons_league_tb_all       = lis_mons_league_tb_all
+    datalist.lis_mons_league_tb_ex_org    = lis_mons_league_tb_ex_org
+    datalist.lis_mons_league_tb_org       = lis_mons_league_tb_org
+    datalist.lis_mons_league_tb_only_org  = lis_mons_league_tb_only_org
+    datalist.lis_mons_league_tb_only_rare = lis_mons_league_tb_only_rare
 
     # debug start
     # temp1 = pd.DataFrame(datalist.lis_mons_league_tb_ex_org)
@@ -283,7 +290,7 @@ def create_combo_list(datalist):
     datalist.lis_mons_names.insert(0, "")
 
     # 主血統+レアの名前リスト
-    datalist.df_monsters_org = df_monsters[(df_monsters["主血統"] == df_monsters["副血統"]) | (df_monsters["モンスター名"].str.startswith('(●レア)'))].copy()
+    datalist.df_monsters_org = df_monsters[(df_monsters["主血統"] == df_monsters["副血統"]) | (df_monsters["モンスター名"].str.startswith('（●レア）'))].copy()
     datalist.lis_mons_names_org = datalist.df_monsters_org.iloc[:, 0].to_list()
     datalist.lis_mons_names_org.insert(0, "")
 
@@ -292,8 +299,18 @@ def create_combo_list(datalist):
     datalist.lis_mons_names_ex_org = datalist.df_monsters_ex_org.iloc[:, 0].to_list()
     datalist.lis_mons_names_ex_org.insert(0, "")
 
+    # 主血統のみの全モンスター名リスト
+    datalist.df_monsters_only_org = df_monsters[df_monsters["主血統"] == df_monsters["副血統"]].copy()
+    datalist.lis_mons_names_only_org = datalist.df_monsters_only_org.iloc[:, 0].to_list()
+    datalist.lis_mons_names_only_org.insert(0, "")
+
+    # レアモンのみの全モンスター名リスト
+    datalist.df_monsters_only_rare = df_monsters[(df_monsters["モンスター名"].str.startswith('（●レア）'))].copy()
+    datalist.lis_mons_names_only_rare = datalist.df_monsters_only_rare.iloc[:, 0].to_list()
+    datalist.lis_mons_names_only_rare.insert(0, "")
+
     # 検索候補削除用のリスト
-    datalist.df_monsters_del = df_monsters[(df_monsters["副血統"] != "レア") | df_monsters["モンスター名"].str.startswith('(●レア)')].copy()
+    datalist.df_monsters_del = df_monsters[(df_monsters["副血統"] != "レア") | df_monsters["モンスター名"].str.startswith('（●レア）')].copy()
     datalist.lis_mons_names_del = datalist.df_monsters_del.iloc[:, 0].to_list()
 
     # 変数をdatalistに格納

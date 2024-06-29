@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/23 sean of copyright owner
+   Copyright 2024/6/29 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ from lib.arrange_widget import disp_result
 def main():
 
     # ページの初期設定
-    init_page_setting("S Tool", "S Tool", "Version 3.2.1")
+    init_page_setting("S Tool", "S Tool", "Version 3.3.0")
 
     # データリストの初期化
     datalist = init_datalist_for_all_client()

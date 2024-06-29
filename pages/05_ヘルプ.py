@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/23 sean of copyright owner
+   Copyright 2024/6/29 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ def main():
           "◎子-親①-祖父①-祖母②の組み合わせ"、"◎子-親②-祖父②-祖母②の組み合わせ"ともに候補が少ないため、  
           まずはe., f., g., h.の閾値を少し小さくする(70→68等)ことを検討してください。  
     
-    7. **リスト内で未実装モンスターである"(●レア)"のモンスターを指定すると、結果が出力されない。**  
+    7. **リスト内で未実装モンスターである"（●レア）"のモンスターを指定すると、結果が出力されない。**  
        仕様です。  
        各モンスターの開始地点をわかりやすくするために置いている意味もあり、使用不可のモンスターも配置しています。  
     

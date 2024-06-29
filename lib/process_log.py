@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/23 sean of copyright owner
+   Copyright 2024/6/29 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ def set_log(Monster_info, thresh_aff):
 
     # 参照テーブル
     write_log(f"◎モンスター参照テーブル：")
-    message_list2 = ["", '純血統+レア','全モンスター', '全モンスター(純血統のみ除く)']
+    message_list2 = ["", "1.純血統+レア", "2.全モンスター", "3.全モンスター(純血統のみ除く)", "4.純血統のみ", "5.レアモンのみ"]
     write_log(f"　　　　　子：{message_list2[st.session_state.session_datalist.lis_choice_table[0]]}")
     write_log(f"　　親祖父母：{message_list2[st.session_state.session_datalist.lis_choice_table[1]]}")
 
@@ -134,7 +134,7 @@ def set_log(Monster_info, thresh_aff):
 def print_log():
     
     st.write('')
-    st.subheader('ログ情報')
+    st.subheader('▪ログ情報')
     txt = st.text_area("設定情報や検索時の途中経過について出力されます。", st.session_state.log, height=850, disabled=True)
 
     return
