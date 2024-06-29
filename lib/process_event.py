@@ -590,6 +590,7 @@ def select_calc_affinity(datalist, selected_rows, is_reverse=False):
     
     # モンスター名の設定
     child = Monster()
+    print(selected_rows)
     print(selected_rows.iloc[-1,2])
     parent1 = Monster(selected_rows.iloc[-1,2])
     granpa1 = Monster(selected_rows.iloc[-1,3])
