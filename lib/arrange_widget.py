@@ -630,10 +630,12 @@ def set_AgGrid2(datalist, data):
         med1        = st.session_state.session_datalist.df_affinities_slct.median(numeric_only=True)
         min1        = st.session_state.session_datalist.df_affinities_slct.min(numeric_only=True)
         max1        = st.session_state.session_datalist.df_affinities_slct.max(numeric_only=True)
-        statistics1 = pd.DataFrame([["相性値",    mark_st1_1, mark_dci1_1, mark_ci1_1, str(num1_1), str(num1_2), mean1[1], med1[1], min1[1], max1[1]],
-                                    ["親祖父母①", mark_st1_2[0], mark_dci1_2[0], mark_ci1_2[0], "-", "-", mean1[2], med1[2], min1[2], max1[2]],
-                                    ["親祖父母②", mark_st1_2[1], mark_dci1_2[1], mark_ci1_2[1], "-", "-", mean1[3], med1[3], min1[3], max1[3]]])
+        statistics1 = pd.DataFrame([["相性値",    mark_st1_1, mark_dci1_1, mark_ci1_1, str(num1_1), str(num1_2), mean1.iloc[1], med1.iloc[1], min1.iloc[1], max1.iloc[1]],
+                                    ["親祖父母①", mark_st1_2.iloc[0], mark_dci1_2.iloc[0], mark_ci1_2.iloc[0], "-", "-", mean1.iloc[2], med1.iloc[2], min1.iloc[2], max1.iloc[2]],
+                                    ["親祖父母②", mark_st1_2.iloc[1], mark_dci1_2.iloc[1], mark_ci1_2.iloc[1], "-", "-", mean1.iloc[3], med1.iloc[3], min1.iloc[3], max1.iloc[3]]])
         statistics1.columns = label
+        print(mean1)
+        print(mean1.iloc[1])
 
         # まとめて出力
         st.write(f"◎選択行")
@@ -651,8 +653,6 @@ def set_AgGrid2(datalist, data):
         selected_rows_r = pd.DataFrame([[0.0, temp.iloc[0, 1], temp.iloc[0, 5], temp.iloc[0, 6], temp.iloc[0, 7], 
                                                                temp.iloc[0, 2], temp.iloc[0, 3], temp.iloc[0, 4]]])
         selected_rows_r.columns = temp.columns.to_list()
-        print(selected_rows_r)
-        print(selected_rows_r.iloc[0, 1])
 
         # 相性値を計算
         with st.spinner('processiong...'):
@@ -670,7 +670,7 @@ def set_AgGrid2(datalist, data):
         # pertile2    = st.session_state.session_datalist.df_affinities_slct_r.quantile(0.8)
         min2        = st.session_state.session_datalist.df_affinities_slct_r.min(numeric_only=True)
         max2        = st.session_state.session_datalist.df_affinities_slct_r.max(numeric_only=True)
-        statistics2 = pd.DataFrame([["相性値", mark_st2_1, mark_dci2_1, mark_ci2_1, num2_1, num2_2, mean2[1], med2[1], min2[1], max2[1]]])
+        statistics2 = pd.DataFrame([["相性値", mark_st2_1, mark_dci2_1, mark_ci2_1, num2_1, num2_2, mean2.iloc[1], med2.iloc[1], min2.iloc[1], max2.iloc[1]]])
         statistics2.columns = label
 
         # まとめて出力
