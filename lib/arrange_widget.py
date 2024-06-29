@@ -647,13 +647,12 @@ def set_AgGrid2(datalist, data):
 
         ### 逆親
         # 逆親設定
-        selected_rows_r = copy.deepcopy(selected_rows.iloc[last_ind-1:last_ind, :])
-        selected_rows_r.iloc[0, 2] = selected_rows.iloc[last_ind-1:last_ind, 5]
-        selected_rows_r.iloc[0, 3] = selected_rows.iloc[last_ind-1:last_ind, 6]
-        selected_rows_r.iloc[0, 4] = selected_rows.iloc[last_ind-1:last_ind, 7]
-        selected_rows_r.iloc[0, 5] = selected_rows.iloc[last_ind-1:last_ind, 2]
-        selected_rows_r.iloc[0, 6] = selected_rows.iloc[last_ind-1:last_ind, 3]
-        selected_rows_r.iloc[0, 7] = selected_rows.iloc[last_ind-1:last_ind, 4]
+        temp = copy.deepcopy(selected_rows.iloc[last_ind-1:last_ind, :])
+        selected_rows_r = pd.DataFrame([[0.0, temp.iloc[0, 1], temp.iloc[0, 5], temp.iloc[0, 6], temp.iloc[0, 7], 
+                                                               temp.iloc[0, 2], temp.iloc[0, 3], temp.iloc[0, 4]]])
+        selected_rows_r.columns = temp.columns.to_list()
+        print(selected_rows_r)
+        print(selected_rows_r.iloc[0, 1])
 
         # 相性値を計算
         with st.spinner('processiong...'):
