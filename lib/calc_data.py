@@ -27,6 +27,9 @@ import pandas as pd
 # import psutil
 # from memory_profiler import profile
 
+# 標準ライブラリ
+import collections
+
 # 自作ライブラリ等
 # from lib.classes import Monster
 # from lib.classes import ThreshAff
@@ -571,9 +574,16 @@ def calc_affinity_m_ptn(Monster_info, datalist):
         return ret, df_affinities
 
     # 閾値(空っぽ)
-    thresh1 = 102
-    thresh2 = 102
-    thresh3 = 70
+    if (st.session_state.session_datalist.lis_choice_table[1] == DataList.choice_table_only_org or
+        st.session_state.session_datalist.lis_choice_table[1] == DataList.choice_table_only_rare):
+        # 親祖父母テーブルが純血統のみ、レアモンのみの場合
+        thresh1 = 94
+        thresh2 = 94
+        thresh3 = 62
+    else:
+        thresh1 = 102
+        thresh2 = 102
+        thresh3 = 70
 
     # 閾値(血統指定)
     if Monster_info[0].pedigree1 != "" and Monster_info[0].pedigree2 != "":
@@ -792,9 +802,16 @@ def calc_affinity_m_s_ptn(Monster_info, datalist):
         return ret, df_affinities
 
     # 閾値(空っぽ)
-    thresh1 = 70
-    thresh2 = 70
-    thresh3 = 70
+    if (st.session_state.session_datalist.lis_choice_table[1] == DataList.choice_table_only_org or
+        st.session_state.session_datalist.lis_choice_table[1] == DataList.choice_table_only_rare):
+        # 親祖父母テーブルが純血統のみ、レアモンのみの場合
+        thresh1 = 62
+        thresh2 = 62
+        thresh3 = 62
+    else:
+        thresh1 = 70
+        thresh2 = 70
+        thresh3 = 70
 
     # 閾値(血統指定)
     if Monster_info[0].pedigree1 != "" and Monster_info[0].pedigree2 != "":
@@ -997,9 +1014,11 @@ def calc_affinity_m_select(Monster_info, datalist):
     lis_affinities_m_cpg    = datalist.lis_affinities_m_cpg
     lis_affinities_s_cpg    = datalist.lis_affinities_s_cpg
     lis_mons_league_tb_c    = st.session_state.session_datalist.lis_mons_league_tb_c
+    df_monsters             = datalist.df_monsters
     # 保管用リストの作成
     lis_affinities      = []
     df_affinities       = pd.DataFrame( [] )
+    lis_good_monsters   = []
     # 共通秘伝値事前計算
     common_aff = st.session_state.input_common_aff2 * DataList.common_aff2 + st.session_state.input_common_aff3 * DataList.common_aff3
     
@@ -1034,11 +1053,21 @@ def calc_affinity_m_select(Monster_info, datalist):
             all_affinity = affinity + common_aff
             mark = get_mark(all_affinity)
             lis_affinities.append([mark, name_c, all_affinity, cpg1, cpg2, pp, affinity, common_aff])
+            if all_affinity >= 475:
+                lis_good_monsters.append(child1)
 
     # データ整形
     df_affinities = shape_data_select(lis_affinities)
+    freq = collections.Counter(lis_good_monsters)
+    str_good_monsters = ""
+    for child in freq.most_common():
+        if child[1] > 2:
+            name = df_monsters[ df_monsters["主血統ID"] == child[0] ].iloc[0, 1]
+            str_good_monsters += f"{name},　"
+        else:
+            break
 
-    return df_affinities
+    return df_affinities, str_good_monsters
 
 
 
@@ -1050,9 +1079,11 @@ def calc_affinity_m_s_select(Monster_info, datalist):
     lis_affinities_m_cp     = datalist.lis_affinities_m_cp
     lis_affinities_s_cp     = datalist.lis_affinities_s_cp
     lis_mons_league_tb_c    = st.session_state.session_datalist.lis_mons_league_tb_c
+    df_monsters             = datalist.df_monsters
     # 保管用リストの作成
     lis_affinities      = []
     df_affinities       = pd.DataFrame( [] )
+    lis_good_monsters   = []
     # 共通秘伝値事前計算
     common_aff = st.session_state.input_common_aff2 * DataList.common_aff2 + st.session_state.input_common_aff3 * DataList.common_aff3
 
@@ -1107,10 +1138,20 @@ def calc_affinity_m_s_select(Monster_info, datalist):
 
             # 格納
             lis_affinities.append([mark, name_c, all_affinity, cpg1, cpg2, pp, affinity, common_aff])
+            if all_affinity >= 475:
+                lis_good_monsters.append(child_m)
 
     # データ整形
     df_affinities = shape_data_select(lis_affinities)
+    freq = collections.Counter(lis_good_monsters)
+    str_good_monsters = ""
+    for child in freq.most_common():
+        if child[1] > 2:
+            name = df_monsters[ df_monsters["主血統ID"] == child[0] ].iloc[0, 1]
+            str_good_monsters += f"{name},　"
+        else:
+            break
 
-    return df_affinities
+    return df_affinities, str_good_monsters
 
 

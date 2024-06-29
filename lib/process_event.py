@@ -607,7 +607,7 @@ def select_calc_affinity(datalist, selected_rows, is_reverse=False):
     st.session_state.session_datalist.lis_mons_league_tb_pg = copy.deepcopy(datalist.lis_mons_league_tb_all)
     
     # 相性計算
-    df_affinities = calc_affinity_select(Monster_info, datalist)
+    df_affinities, str_good_monsters = calc_affinity_select(Monster_info, datalist)
 
     # テーブルの整形
     del df_affinities["index"]
@@ -615,8 +615,10 @@ def select_calc_affinity(datalist, selected_rows, is_reverse=False):
     # 一時保存場所に設定
     if is_reverse:
         st.session_state.session_datalist.df_affinities_slct_r = df_affinities
+        st.session_state.session_datalist.str_good_monsters_r  = str_good_monsters
     else:
         st.session_state.session_datalist.df_affinities_slct = df_affinities
+        st.session_state.session_datalist.str_good_monsters  = str_good_monsters
 
     return
 

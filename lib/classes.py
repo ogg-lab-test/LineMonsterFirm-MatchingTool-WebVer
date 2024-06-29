@@ -239,6 +239,8 @@ class SessionDataList():
         self.df_affinities        = pd.DataFrame( [] )
         self.df_affinities_slct   = pd.DataFrame( [] )
         self.df_affinities_slct_r = pd.DataFrame( [] )
+        self.str_good_monsters   = []
+        self.str_good_monsters_r = []
 
         # 相性閾値（初期化用）
         self.lis_threshs = [0, 0, 34, 32, 75, 75, 75, 75]

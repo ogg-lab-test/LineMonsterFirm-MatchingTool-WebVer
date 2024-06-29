@@ -631,12 +631,16 @@ def set_AgGrid2(datalist, data):
                                     ["親祖父母②", mark_st1_2.iloc[1], mark_dci1_2.iloc[1], mark_ci1_2.iloc[1], "-", "-", mean1.iloc[3], med1.iloc[3], min1.iloc[3], max1.iloc[3]]])
         statistics1.columns = label
 
+        # 相性がよさそうな種族の算出
+
         # まとめて出力
-        st.write(f"◎選択行")
+        st.markdown("###### ◎選択行")
         st.dataframe(selected_rows.iloc[last_ind-1:last_ind, :], width=2000, height=40, use_container_width=True)
-        st.write(f"◎選択行の相性値統計量")
+        st.markdown("###### ◎選択行の相性値統計量")
         st.dataframe(statistics1, width=2000, height=150, use_container_width=True)
-        st.write(f"◎逆引き検索結果")
+        st.markdown("###### ◎相性がよさそうな種族候補（ご参考レベル。必ずマニュアルの説明を読むこと。）")
+        st.write(f".　　　{st.session_state.session_datalist.str_good_monsters}")
+        st.markdown("###### ◎逆引き検索結果")
         set_AgGrid1(datalist, st.session_state.session_datalist.df_affinities_slct, True)
         # st.dataframe(st.session_state.session_datalist.df_affinities_slct, width=1000, height=400, use_container_width=True)
 
@@ -668,18 +672,20 @@ def set_AgGrid2(datalist, data):
         statistics2.columns = label
 
         # まとめて出力
-        st.write(f"◎選択行（逆親バージョン）")
+        st.markdown("###### ◎選択行（逆親バージョン）")
         st.dataframe(selected_rows_r, width=2000, height=40, use_container_width=True)
-        st.write(f"◎選択行の相性値統計量（逆親バージョン）")
+        st.markdown("###### ◎選択行の相性値統計量（逆親バージョン）")
         st.dataframe(statistics2, width=2000, height=50, use_container_width=True)
-        st.write(f"◎逆引き検索結果（逆親バージョン）")
+        st.markdown("###### ◎相性がよさそうな種族候補（ご参考レベル。必ずマニュアルの説明を読むこと。）")
+        st.write(f".　　　{st.session_state.session_datalist.str_good_monsters_r}")
+        st.markdown("###### ◎逆引き検索結果（逆親バージョン）")
         set_AgGrid1(datalist, st.session_state.session_datalist.df_affinities_slct_r, True)
         # st.dataframe(st.session_state.session_datalist.df_affinities_slct_r, width=1000, height=400, use_container_width=True)
 
 
         # 図の出力
         with st.expander("★逆引き検索結果のヒストグラムを表示したい場合はタップまたはクリックしてください。"):
-            st.write(f"◎逆引き検索結果のヒストグラム）")
+            st.markdown("###### ◎逆引き検索結果のヒストグラム）")
             fig, ax = plt.subplots()
             c1,c2 = "red","blue"
             l1,l2 = "選択行","選択行（逆親）"
