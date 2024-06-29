@@ -20,6 +20,7 @@
 """
 
 import pandas as pd
+from st_aggrid.shared import JsCode
 
 
 
@@ -200,6 +201,12 @@ class DataList():
         self.df_monsters_del = pd.DataFrame()
         self.lis_mons_names_del = []
 
+        # 文字の色付け
+        self.cellsytle_jscode = create_jscode_aff()
+        self.cellsytle_jscode_parent = create_jscode_parent()
+        self.cellsytle_jscode_either = create_jscode_either()
+        self.cellsytle_jscode_both = create_jscode_both()
+
 
 
 # データをまとめるクラス(セッションごとに1つもつ)
@@ -235,5 +242,125 @@ class SessionDataList():
 
         # 相性閾値（初期化用）
         self.lis_threshs = [0, 0, 34, 32, 75, 75, 75, 75]
+
+
+
+# AgGridのオプションに使用するjscodeを作成して返却する。
+def create_jscode_aff():
+
+    cellsytle_jscode = JsCode(
+    """
+    function(params) {
+        if (params.value.includes('☆')) {
+            return {
+                'color': 'black',
+                'backgroundColor': 'yellow'
+            }
+        } else if (params.value.includes('◎'))  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'lime'
+            }
+        } else if (params.value.includes('〇'))  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'aqua'
+            }
+        }
+    };
+    """
+    )
+
+    return cellsytle_jscode
+
+
+
+# AgGridのオプションに使用するjscodeを作成して返却する。
+def create_jscode_parent():
+
+    cellsytle_jscode = JsCode(
+    """
+    function(params) {
+        if (params.value > 90) {
+            return {
+                'color': 'black',
+                'backgroundColor': 'yellow'
+            }
+        } else if (params.value > 70)  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'lime'
+            }
+        } else if (params.value > 54)  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'aqua'
+            }
+        }
+    };
+    """
+    )
+
+    return cellsytle_jscode
+
+
+
+# AgGridのオプションに使用するjscodeを作成して返却する。
+def create_jscode_either():
+
+    cellsytle_jscode = JsCode(
+    """
+    function(params) {
+        if (params.value > 260) {
+            return {
+                'color': 'black',
+                'backgroundColor': 'yellow'
+            }
+        } else if (params.value > 210)  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'lime'
+            }
+        } else if (params.value > 160)  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'aqua'
+            }
+        }
+    };
+    """
+    )
+
+    return cellsytle_jscode
+
+
+
+# AgGridのオプションに使用するjscodeを作成して返却する。
+def create_jscode_both():
+
+    cellsytle_jscode = JsCode(
+    """
+    function(params) {
+        if (params.value > 610) {
+            return {
+                'color': 'black',
+                'backgroundColor': 'yellow'
+            }
+        } else if (params.value > 490)  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'lime'
+            }
+        } else if (params.value > 374)  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'aqua'
+            }
+        }
+    };
+    """
+    )
+
+    return cellsytle_jscode
 
 

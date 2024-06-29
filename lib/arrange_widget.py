@@ -24,7 +24,6 @@ import streamlit as st
 from st_aggrid import AgGrid
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 from st_aggrid.shared import GridUpdateMode
-from st_aggrid.shared import JsCode
 
 # 外部ライブラリ
 import pandas as pd
@@ -546,7 +545,7 @@ def disp_result(datalist, used_memory):
 
                 st.write('')
                 st.subheader(f"▪検索結果一覧", help="結果一覧が表示されます。相性値列の背景色凡例は次の通りです。黄：☆、緑：◎、水色：〇")
-                data1 = set_AgGrid1(st.session_state.session_datalist.df_affinities)
+                data1 = set_AgGrid1(datalist, st.session_state.session_datalist.df_affinities)
                 
                 st.write('')
                 st.subheader(f"▪逆引き検索結果一覧", help="結果一覧から選択した最新の1件を元に、親祖父母を固定して再検索します。相性値列等の相性値に関係する列の背景色凡例は次の通りです。黄：☆、緑：◎、水色：〇")
@@ -567,21 +566,18 @@ def disp_result(datalist, used_memory):
 
 
 # 最終結果のデータフレームをAgGridを使用して画面上に配置する
-def set_AgGrid1(df_affinities, add_color_flag=False):
+def set_AgGrid1(datalist, df_affinities, add_color_flag=False):
 
     gb = GridOptionsBuilder.from_dataframe(df_affinities)
     gb.configure_selection(selection_mode="multiple", use_checkbox=True)
-    cellsytle_jscode = create_jscode_aff()
-    gb.configure_column("評価", cellStyle=cellsytle_jscode)
+    
+    gb.configure_column("評価", cellStyle=datalist.cellsytle_jscode)
     if add_color_flag:
-        cellsytle_jscode_parent = create_jscode_parent()
-        gb.configure_column("親①②", cellStyle=cellsytle_jscode_parent)
-        cellsytle_jscode_either = create_jscode_either()
-        gb.configure_column("親祖父母①", cellStyle=cellsytle_jscode_either)
-        gb.configure_column("親祖父母②", cellStyle=cellsytle_jscode_either)
-        cellsytle_jscode_both = create_jscode_both()
-        gb.configure_column("相性値", cellStyle=cellsytle_jscode_both)
-        gb.configure_column("素相性値", cellStyle=cellsytle_jscode_both)
+        gb.configure_column("親①②", cellStyle=datalist.cellsytle_jscode_parent)
+        gb.configure_column("親祖父母①", cellStyle=datalist.cellsytle_jscode_either)
+        gb.configure_column("親祖父母②", cellStyle=datalist.cellsytle_jscode_either)
+        gb.configure_column("相性値", cellStyle=datalist.cellsytle_jscode_both)
+        gb.configure_column("素相性値", cellStyle=datalist.cellsytle_jscode_both)
     # gb.configure_pagination()
     gridOptions = gb.build()
     data = AgGrid(df_affinities, 
@@ -634,8 +630,6 @@ def set_AgGrid2(datalist, data):
                                     ["親祖父母①", mark_st1_2.iloc[0], mark_dci1_2.iloc[0], mark_ci1_2.iloc[0], "-", "-", mean1.iloc[2], med1.iloc[2], min1.iloc[2], max1.iloc[2]],
                                     ["親祖父母②", mark_st1_2.iloc[1], mark_dci1_2.iloc[1], mark_ci1_2.iloc[1], "-", "-", mean1.iloc[3], med1.iloc[3], min1.iloc[3], max1.iloc[3]]])
         statistics1.columns = label
-        print(mean1)
-        print(mean1.iloc[1])
 
         # まとめて出力
         st.write(f"◎選択行")
@@ -643,7 +637,7 @@ def set_AgGrid2(datalist, data):
         st.write(f"◎選択行の相性値統計量")
         st.dataframe(statistics1, width=2000, height=150, use_container_width=True)
         st.write(f"◎逆引き検索結果")
-        set_AgGrid1(st.session_state.session_datalist.df_affinities_slct, True)
+        set_AgGrid1(datalist, st.session_state.session_datalist.df_affinities_slct, True)
         # st.dataframe(st.session_state.session_datalist.df_affinities_slct, width=1000, height=400, use_container_width=True)
 
 
@@ -679,7 +673,7 @@ def set_AgGrid2(datalist, data):
         st.write(f"◎選択行の相性値統計量（逆親バージョン）")
         st.dataframe(statistics2, width=2000, height=50, use_container_width=True)
         st.write(f"◎逆引き検索結果（逆親バージョン）")
-        set_AgGrid1(st.session_state.session_datalist.df_affinities_slct_r, True)
+        set_AgGrid1(datalist, st.session_state.session_datalist.df_affinities_slct_r, True)
         # st.dataframe(st.session_state.session_datalist.df_affinities_slct_r, width=1000, height=400, use_container_width=True)
 
 
@@ -704,123 +698,4 @@ def set_AgGrid2(datalist, data):
         # 選択無なら、メッセージのみ表示
         st.write(f"逆引き検索をする場合は、「検索結果一覧」から、任意のレコードにチェックをつけてください。最後にチェックしたレコードの親祖父母の組合せを元に再計算を実施します。")
 
-
-
-# AgGridのオプションに使用するjscodeを作成して返却する。
-def create_jscode_aff():
-
-    cellsytle_jscode = JsCode(
-    """
-    function(params) {
-        if (params.value.includes('☆')) {
-            return {
-                'color': 'black',
-                'backgroundColor': 'yellow'
-            }
-        } else if (params.value.includes('◎'))  {
-            return {
-                'color': 'black',
-                'backgroundColor': 'lime'
-            }
-        } else if (params.value.includes('〇'))  {
-            return {
-                'color': 'black',
-                'backgroundColor': 'aqua'
-            }
-        }
-    };
-    """
-    )
-
-    return cellsytle_jscode
-
-
-
-# AgGridのオプションに使用するjscodeを作成して返却する。
-def create_jscode_parent():
-
-    cellsytle_jscode = JsCode(
-    """
-    function(params) {
-        if (params.value > 90) {
-            return {
-                'color': 'black',
-                'backgroundColor': 'yellow'
-            }
-        } else if (params.value > 70)  {
-            return {
-                'color': 'black',
-                'backgroundColor': 'lime'
-            }
-        } else if (params.value > 54)  {
-            return {
-                'color': 'black',
-                'backgroundColor': 'aqua'
-            }
-        }
-    };
-    """
-    )
-
-    return cellsytle_jscode
-
-
-
-# AgGridのオプションに使用するjscodeを作成して返却する。
-def create_jscode_either():
-
-    cellsytle_jscode = JsCode(
-    """
-    function(params) {
-        if (params.value > 260) {
-            return {
-                'color': 'black',
-                'backgroundColor': 'yellow'
-            }
-        } else if (params.value > 210)  {
-            return {
-                'color': 'black',
-                'backgroundColor': 'lime'
-            }
-        } else if (params.value > 160)  {
-            return {
-                'color': 'black',
-                'backgroundColor': 'aqua'
-            }
-        }
-    };
-    """
-    )
-
-    return cellsytle_jscode
-
-
-
-# AgGridのオプションに使用するjscodeを作成して返却する。
-def create_jscode_both():
-
-    cellsytle_jscode = JsCode(
-    """
-    function(params) {
-        if (params.value > 610) {
-            return {
-                'color': 'black',
-                'backgroundColor': 'yellow'
-            }
-        } else if (params.value > 490)  {
-            return {
-                'color': 'black',
-                'backgroundColor': 'lime'
-            }
-        } else if (params.value > 374)  {
-            return {
-                'color': 'black',
-                'backgroundColor': 'aqua'
-            }
-        }
-    };
-    """
-    )
-
-    return cellsytle_jscode
 
