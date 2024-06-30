@@ -33,7 +33,8 @@ import matplotlib.pyplot as plt
 import japanize_matplotlib
 
 # 標準ライブラリ
-import copy
+# import copy
+# import time
 
 # 自作ライブラリ等
 from lib.classes import DataList
@@ -549,8 +550,7 @@ def disp_result(datalist, used_memory):
                 
                 st.write('')
                 st.subheader(f"▪逆引き検索結果一覧", help="結果一覧から選択した最新の1件を元に、親祖父母を固定して再検索します。相性値列等の相性値に関係する列の背景色凡例は次の通りです。黄：☆、緑：◎、水色：〇")
-                data2 = set_AgGrid2(datalist, data1)
-                
+                data2 = set_AgGrid2(datalist, data1)                
         
         # 設定値の表示
         print_log()
@@ -595,59 +595,61 @@ def set_AgGrid2(datalist, data):
 
     # 検索結果から選択された行をDF化
     selected_rows = data["selected_rows"]
-    selected_rows = pd.DataFrame(selected_rows)
 
     # 処理
-    if len(selected_rows.index) > 0:
+    if selected_rows is not None:
 
         # 一行以上あれば表示処理
 
+        # ラベルの定義
+        label = ['種別', '☆の個数', '◎の個数', '〇の個数', '480以上の個数', '600以上の個数', '平均値', '中央値', '最小値', '最大値']
+
         ### 順親
         # 選択行設定
-        del selected_rows["level_0"]
-        del selected_rows["評価"]
         last_ind = len(selected_rows.index)
+        temp = selected_rows.iloc[last_ind-1:last_ind, :].values.tolist()
+        last_selected_rows = pd.DataFrame(temp, columns=selected_rows.columns.to_list() )
+        del last_selected_rows["level_0"]
+        del last_selected_rows["評価"]
 
         # 1件目のレコードを使用して、相性値を計算
         with st.spinner('processiong...'):
-            select_calc_affinity(datalist, selected_rows, False)
+            select_calc_affinity(datalist, last_selected_rows, False)
         
         # 選択行に関する統計量
-        label = ['種別', '☆の個数', '◎の個数', '〇の個数', '480以上の個数', '600以上の個数', '平均値', '中央値', '最小値', '最大値']
-        mark_st1_1  = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 1] == '☆').sum()
-        mark_dci1_1 = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 1] == '◎').sum()
-        mark_ci1_1  = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 1] == '〇').sum()
-        mark_st1_2  = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 4:6] > 260).sum()
-        mark_dci1_2 = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 4:6] > 210).sum() - mark_st1_2
-        mark_ci1_2  = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 4:6] > 160).sum() - mark_st1_2 - mark_dci1_2
-        num1_1      = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 3] >= 480).sum()
-        num1_2      = (st.session_state.session_datalist.df_affinities_slct.iloc[:, 3] >= 600).sum()
-        mean1       = st.session_state.session_datalist.df_affinities_slct.mean(numeric_only=True)
-        med1        = st.session_state.session_datalist.df_affinities_slct.median(numeric_only=True)
-        min1        = st.session_state.session_datalist.df_affinities_slct.min(numeric_only=True)
-        max1        = st.session_state.session_datalist.df_affinities_slct.max(numeric_only=True)
-        statistics1 = pd.DataFrame([["相性値",    mark_st1_1, mark_dci1_1, mark_ci1_1, str(num1_1), str(num1_2), mean1.iloc[1], med1.iloc[1], min1.iloc[1], max1.iloc[1]],
-                                    ["親祖父母①", mark_st1_2.iloc[0], mark_dci1_2.iloc[0], mark_ci1_2.iloc[0], "-", "-", mean1.iloc[2], med1.iloc[2], min1.iloc[2], max1.iloc[2]],
-                                    ["親祖父母②", mark_st1_2.iloc[1], mark_dci1_2.iloc[1], mark_ci1_2.iloc[1], "-", "-", mean1.iloc[3], med1.iloc[3], min1.iloc[3], max1.iloc[3]]])
-        statistics1.columns = label
-
-        # 相性がよさそうな種族の算出
+        df_affinities_slct = st.session_state.session_datalist.df_affinities_slct
+        mark_st1_1  = (df_affinities_slct.iloc[:, 1] == '☆').sum()
+        mark_dci1_1 = (df_affinities_slct.iloc[:, 1] == '◎').sum()
+        mark_ci1_1  = (df_affinities_slct.iloc[:, 1] == '〇').sum()
+        mark_st1_2  = (df_affinities_slct.iloc[:, 4:6] > 260).sum()
+        mark_dci1_2 = (df_affinities_slct.iloc[:, 4:6] > 210).sum() - mark_st1_2
+        mark_ci1_2  = (df_affinities_slct.iloc[:, 4:6] > 160).sum() - mark_st1_2 - mark_dci1_2
+        num1_1      = (df_affinities_slct.iloc[:, 3] >= 480).sum()
+        num1_2      = (df_affinities_slct.iloc[:, 3] >= 600).sum()
+        mean1       = df_affinities_slct.iloc[:, 3:6].mean(numeric_only=True)
+        med1        = df_affinities_slct.iloc[:, 3:6].median(numeric_only=True)
+        min1        = df_affinities_slct.iloc[:, 3:6].min(numeric_only=True)
+        max1        = df_affinities_slct.iloc[:, 3:6].max(numeric_only=True)
+        statistics1 = pd.DataFrame([["相性値",    mark_st1_1, mark_dci1_1, mark_ci1_1, str(num1_1), str(num1_2), mean1.iloc[0], med1.iloc[0], min1.iloc[0], max1.iloc[0]],
+                                    ["親祖父母①", mark_st1_2.iloc[0], mark_dci1_2.iloc[0], mark_ci1_2.iloc[0], "-", "-", mean1.iloc[1], med1.iloc[1], min1.iloc[1], max1.iloc[1]],
+                                    ["親祖父母②", mark_st1_2.iloc[1], mark_dci1_2.iloc[1], mark_ci1_2.iloc[1], "-", "-", mean1.iloc[2], med1.iloc[2], min1.iloc[2], max1.iloc[2]]], 
+                                    columns=label)
 
         # まとめて出力
         st.markdown("###### ◎選択行")
-        st.dataframe(selected_rows.iloc[last_ind-1:last_ind, :], width=2000, height=40, use_container_width=True)
+        st.dataframe(last_selected_rows, width=2000, height=40, use_container_width=True)
         st.markdown("###### ◎選択行の相性値統計量")
         st.dataframe(statistics1, width=2000, height=150, use_container_width=True)
         st.markdown("###### ◎相性がよさそうな種族候補（ご参考レベル。必ずマニュアルの説明を読むこと。）")
         st.write(f".　　　{st.session_state.session_datalist.str_good_monsters}")
         st.markdown("###### ◎逆引き検索結果")
-        set_AgGrid1(datalist, st.session_state.session_datalist.df_affinities_slct, True)
-        # st.dataframe(st.session_state.session_datalist.df_affinities_slct, width=1000, height=400, use_container_width=True)
+        set_AgGrid1(datalist, df_affinities_slct, True)
+        # st.dataframe(df_affinities_slct, width=1000, height=400, use_container_width=True)
 
 
         ### 逆親
         # 逆親設定
-        temp = copy.deepcopy(selected_rows.iloc[last_ind-1:last_ind, :])
+        temp = last_selected_rows
         selected_rows_r = pd.DataFrame([[0.0, temp.iloc[0, 1], temp.iloc[0, 5], temp.iloc[0, 6], temp.iloc[0, 7], 
                                                                temp.iloc[0, 2], temp.iloc[0, 3], temp.iloc[0, 4]]])
         selected_rows_r.columns = temp.columns.to_list()
@@ -655,21 +657,22 @@ def set_AgGrid2(datalist, data):
         # 相性値を計算
         with st.spinner('processiong...'):
             select_calc_affinity(datalist, selected_rows_r, True)
-            selected_rows_r.iloc[0, 0] = st.session_state.session_datalist.df_affinities_slct_r[st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 2] == selected_rows_r.iloc[0, 1]].iloc[0, 3]
-
+            
         # 選択行(逆親)に関する統計量
-        mark_st2_1  = (st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 1] == '☆').sum()
-        mark_dci2_1 = (st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 1] == '◎').sum()
-        mark_ci2_1  = (st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 1] == '〇').sum()
-        num2_1      = (st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 3] >= 480).sum()
-        num2_2      = (st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 3] >= 600).sum()
-        mean2       = st.session_state.session_datalist.df_affinities_slct_r.mean(numeric_only=True)
-        med2        = st.session_state.session_datalist.df_affinities_slct_r.median(numeric_only=True)
-        # pertile2    = st.session_state.session_datalist.df_affinities_slct_r.quantile(0.8)
-        min2        = st.session_state.session_datalist.df_affinities_slct_r.min(numeric_only=True)
-        max2        = st.session_state.session_datalist.df_affinities_slct_r.max(numeric_only=True)
-        statistics2 = pd.DataFrame([["相性値", mark_st2_1, mark_dci2_1, mark_ci2_1, num2_1, num2_2, mean2.iloc[1], med2.iloc[1], min2.iloc[1], max2.iloc[1]]])
-        statistics2.columns = label
+        df_affinities_slct_r = st.session_state.session_datalist.df_affinities_slct_r
+        selected_rows_r.iloc[0, 0] = df_affinities_slct_r[df_affinities_slct_r.iloc[:, 2] == selected_rows_r.iloc[0, 1]].iloc[0, 3]
+        mark_st2_1  = (df_affinities_slct_r.iloc[:, 1] == '☆').sum()
+        mark_dci2_1 = (df_affinities_slct_r.iloc[:, 1] == '◎').sum()
+        mark_ci2_1  = (df_affinities_slct_r.iloc[:, 1] == '〇').sum()
+        num2_1      = (df_affinities_slct_r.iloc[:, 3] >= 480).sum()
+        num2_2      = (df_affinities_slct_r.iloc[:, 3] >= 600).sum()
+        mean2       = df_affinities_slct_r.iloc[:, 3:4].mean(numeric_only=True)
+        med2        = df_affinities_slct_r.iloc[:, 3:4].median(numeric_only=True)
+        # pertile2    = df_affinities_slct_r.quantile(0.8)
+        min2        = df_affinities_slct_r.iloc[:, 3:4].min(numeric_only=True)
+        max2        = df_affinities_slct_r.iloc[:, 3:4].max(numeric_only=True)
+        statistics2 = pd.DataFrame([["相性値", mark_st2_1, mark_dci2_1, mark_ci2_1, num2_1, num2_2, mean2.iloc[0], med2.iloc[0], min2.iloc[0], max2.iloc[0]]],
+                                   columns=label)
 
         # まとめて出力
         st.markdown("###### ◎選択行（逆親バージョン）")
@@ -679,8 +682,8 @@ def set_AgGrid2(datalist, data):
         st.markdown("###### ◎相性がよさそうな種族候補（ご参考レベル。必ずマニュアルの説明を読むこと。）")
         st.write(f".　　　{st.session_state.session_datalist.str_good_monsters_r}")
         st.markdown("###### ◎逆引き検索結果（逆親バージョン）")
-        set_AgGrid1(datalist, st.session_state.session_datalist.df_affinities_slct_r, True)
-        # st.dataframe(st.session_state.session_datalist.df_affinities_slct_r, width=1000, height=400, use_container_width=True)
+        set_AgGrid1(datalist, df_affinities_slct_r, True)
+        # st.dataframe(df_affinities_slct_r, width=1000, height=400, use_container_width=True)
 
 
         # 図の出力
@@ -692,8 +695,8 @@ def set_AgGrid2(datalist, data):
             ax.set_xlabel('相性値')
             ax.set_ylabel('頻度')
             ax.grid()
-            ax.hist(st.session_state.session_datalist.df_affinities_slct.iloc[:, 3],   bins=30, color=c1, label=l1, range=(350, 650), histtype="stepfilled")
-            ax.hist(st.session_state.session_datalist.df_affinities_slct_r.iloc[:, 3], bins=30, color=c2, label=l2, range=(350, 650), histtype="step")
+            ax.hist(df_affinities_slct.iloc[:, 3],   bins=30, color=c1, label=l1, range=(350, 650), histtype="stepfilled")
+            ax.hist(df_affinities_slct_r.iloc[:, 3], bins=30, color=c2, label=l2, range=(350, 650), histtype="step")
             ax.legend(loc=0)
             st.pyplot(fig, use_container_width=False)
 

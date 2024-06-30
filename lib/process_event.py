@@ -590,12 +590,12 @@ def select_calc_affinity(datalist, selected_rows, is_reverse=False):
     
     # モンスター名の設定
     child = Monster()
-    parent1 = Monster(selected_rows.iloc[-1,2])
-    granpa1 = Monster(selected_rows.iloc[-1,3])
-    granma1 = Monster(selected_rows.iloc[-1,4])
-    parent2 = Monster(selected_rows.iloc[-1,5])
-    granpa2 = Monster(selected_rows.iloc[-1,6])
-    granma2 = Monster(selected_rows.iloc[-1,7])
+    parent1 = Monster(selected_rows.iloc[0,2])
+    granpa1 = Monster(selected_rows.iloc[0,3])
+    granma1 = Monster(selected_rows.iloc[0,4])
+    parent2 = Monster(selected_rows.iloc[0,5])
+    granpa2 = Monster(selected_rows.iloc[0,6])
+    granma2 = Monster(selected_rows.iloc[0,7])
     Monster_info = [child, parent1, granpa1, granma1, parent2, granpa2, granma2]
 
     # 主血統/副血統の設定
